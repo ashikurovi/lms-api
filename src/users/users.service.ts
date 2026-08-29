@@ -1,26 +1,64 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { User } from './entities/user.entity';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
+
+  async create(createUserDto: CreateUserDto) {
+    const user = this.userRepository.create(createUserDto);
+    return await this.userRepository.save(user);
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    return await this.userRepository.find();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+    return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async findByPhone(phone: string) {
+    return await this.userRepository.findOneBy({ phone });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async findByEmail(email: string) {
+    return await this.userRepository.findOneBy({ email });
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const user = await this.findOne(id);
+    Object.assign(user, updateUserDto);
+    return await this.userRepository.save(user);
+  }
+
+  async remove(id: string) {
+    const user = await this.findOne(id);
+    return await this.userRepository.softRemove(user);
+  }
+
+  async ban(id: string) {
+    const user = await this.findOne(id);
+    user.isBanned = true;
+    user.bannedAt = new Date();
+    return await this.userRepository.save(user);
+  }
+
+  async unban(id: string) {
+    const user = await this.findOne(id);
+    user.isBanned = false;
+    user.bannedAt = null;
+    return await this.userRepository.save(user);
   }
 }
