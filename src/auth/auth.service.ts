@@ -203,7 +203,7 @@ export class AuthService {
     return { message: 'Password has been reset successfully' };
   }
 
-  async removeDevice(userId: string, deviceToRemove: string) {
+  async logout(userId: string, deviceToRemove: string) {
     // UsersService.findOne might throw NotFoundException if not found
     const user = await this.usersService.findOne(userId);
     
@@ -211,7 +211,13 @@ export class AuthService {
     const newDevices = devices.filter(d => d !== deviceToRemove);
     
     await this.usersService.update(user.id, { devices: newDevices });
-    return { message: 'Device removed successfully' };
+    return { message: 'Logged out successfully' };
+  }
+
+  async logoutAll(userId: string) {
+    const user = await this.usersService.findOne(userId);
+    await this.usersService.update(user.id, { devices: [] });
+    return { message: 'Logged out from all devices successfully' };
   }
 }
 
