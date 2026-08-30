@@ -12,7 +12,7 @@ export class AuthController {
   @Post('send-otp')
   @HttpCode(HttpStatus.OK)
   async sendOtp(@Body() sendOtpDto: SendOtpDto) {
-    const data = await this.authService.sendOtp(sendOtpDto.phone);
+    const data = await this.authService.sendLoginOtp(sendOtpDto.phone);
     return { statusCode: HttpStatus.OK, ...data };
   }
 

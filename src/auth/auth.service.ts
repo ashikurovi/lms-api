@@ -14,6 +14,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) { }
 
+  async sendLoginOtp(phone: string) {
+    const user = await this.usersService.findByPhone(phone);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return this.sendOtp(phone);
+  }
+
   async sendOtp(phone: string) {
     // 1. Generate a random 6 digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
