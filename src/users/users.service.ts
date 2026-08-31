@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -10,15 +10,51 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto) {
     const user = this.userRepository.create(createUserDto);
     return await this.userRepository.save(user);
   }
 
-  async findAll() {
-    return await this.userRepository.find();
+  async findAll(pageStr?: string, limitStr?: string, search?: string) {
+    const page = parseInt(pageStr ?? '1', 10) || 1;
+    const limit = parseInt(limitStr ?? '10', 10) || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search) {
+      where.name = ILike(`%${search}%`);
+    }
+
+    const [items, total] = await this.userRepository.findAndCount({
+      where,
+      skip,
+      take: limit,
+      order: { createdAt: 'DESC' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isBanned: true,
+        createdAt: true,
+        updatedAt: true,
+        lastlogin: true,
+        bannedAt: true,
+        devices: true,
+
+      },
+    });
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: string) {

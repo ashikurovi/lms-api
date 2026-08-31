@@ -104,6 +104,10 @@ export class AuthService {
       });
     }
 
+    if (user.isBanned) {
+      throw new BadRequestException('User is banned');
+    }
+
     // 4. Update lastlogin and devices
     user.lastlogin = new Date();
     let devices = user.devices || [];
