@@ -9,6 +9,22 @@ import { UploadsModule } from './uploads/uploads.module';
 import { CategoryModule } from './category/category.module';
 import { MentorsModule } from './mentors/mentors.module';
 import { StudentsModule } from './students/students.module';
+import { CtagoriesModule } from './ctagories/ctagories.module';
+import { CourseModule } from './course/course.module';
+import { BatchModule } from './batch/batch.module';
+import { ModuleModule } from './module/module.module';
+import { LessonModule } from './lesson/lesson.module';
+import { EnrollmentModule } from './enrollment/enrollment.module';
+import { InstallmentModule } from './installment/installment.module';
+import { PaymentsModule } from './payments/payments.module';
+import { LiveSchedulesModule } from './live_schedules/live_schedules.module';
+import { AssignmentsModule } from './assignments/assignments.module';
+import { AssignmentSubmissionsModule } from './assignment_submissions/assignment_submissions.module';
+import { ResourcesModule } from './resources/resources.module';
+
+import { CertificatesModule } from './certificates/certificates.module';
+import { CouponsModule } from './coupons/coupons.module';
+import { OverviewModule } from './overview/overview.module';
 
 @Module({
   imports: [
@@ -34,6 +50,21 @@ import { StudentsModule } from './students/students.module';
     CategoryModule,
     MentorsModule,
     StudentsModule,
+    CtagoriesModule,
+    CourseModule,
+    BatchModule,
+    ModuleModule,
+    LessonModule,
+    EnrollmentModule,
+    InstallmentModule,
+    PaymentsModule,
+    LiveSchedulesModule,
+    AssignmentsModule,
+    AssignmentSubmissionsModule,
+    CouponsModule,
+    ResourcesModule,
+    CertificatesModule,
+    OverviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

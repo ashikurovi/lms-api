@@ -56,6 +56,24 @@ export class StudentsController {
   }
 
   @Public()
+  @Get('check')
+  async checkStudent(
+    @Query('phone') phone?: string,
+    @Query('roll') roll?: string,
+    @Query('registrationNumber') registrationNumber?: string,
+  ) {
+    const data = await this.studentsService.checkStudent({ phone, roll, registrationNumber });
+    return { statusCode: HttpStatus.OK, ...data };
+  }
+
+  @Public()
+  @Post('register')
+  async registerStudent(@Body() registerDto: any) {
+    const data = await this.studentsService.registerStudent(registerDto);
+    return { statusCode: HttpStatus.CREATED, message: 'Student registered successfully', data };
+  }
+
+  @Public()
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const data = await this.studentsService.findOne(id);
