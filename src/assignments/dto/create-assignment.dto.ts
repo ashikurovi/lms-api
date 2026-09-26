@@ -6,8 +6,8 @@ export class CreateAssignmentDto {
   batchId: string;
 
   @IsString()
-  @IsNotEmpty()
-  mentorId: string;
+  @IsOptional()
+  mentorId?: string;
 
   @IsString()
   @IsNotEmpty()

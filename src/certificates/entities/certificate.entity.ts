@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import { Student } from '../../students/entities/student.entity';
 import { Batch } from '../../batch/entities/batch.entity';
 import { Course } from '../../course/entities/course.entity';
 
@@ -20,11 +20,11 @@ export class Certificate {
   @Column()
   studentId: string;
 
-  @ManyToOne(() => User, {
+  @ManyToOne(() => Student, {
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'studentId' })
-  student: User;
+  student: Student;
 
   // Batch
   @Column()

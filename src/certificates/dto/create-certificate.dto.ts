@@ -17,16 +17,16 @@ export class CreateCertificateDto {
 
 
   @IsString()
-  @IsNotEmpty()
-  studentName: string;
+  @IsOptional()
+  studentName?: string;
 
   @IsString()
-  @IsNotEmpty()
-  courseName: string;
+  @IsOptional()
+  courseName?: string;
 
   @IsString()
-  @IsNotEmpty()
-  batchNumber: string;
+  @IsOptional()
+  batchNumber?: string;
 
   @IsDateString()
   @IsNotEmpty()
@@ -66,8 +66,39 @@ export class CreateCertificateDto {
 }
 
 export class BulkCreateCertificateDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateCertificateDto)
-  certificates: CreateCertificateDto[];
+  @IsString()
+  @IsNotEmpty()
+  batchId: string;
+
+  @IsString()
+  @IsOptional()
+  courseId?: string;
+
+  @IsDateString()
+  @IsOptional()
+  issueDate?: string;
+
+  @IsString()
+  @IsOptional()
+  signature1Url?: string;
+
+  @IsString()
+  @IsOptional()
+  signature2Url?: string;
+
+  @IsString()
+  @IsOptional()
+  signature1Name?: string;
+
+  @IsString()
+  @IsOptional()
+  signature1Designation?: string;
+
+  @IsString()
+  @IsOptional()
+  signature2Name?: string;
+
+  @IsString()
+  @IsOptional()
+  signature2Designation?: string;
 }

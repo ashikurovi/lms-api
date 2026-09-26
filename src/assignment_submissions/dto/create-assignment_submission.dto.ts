@@ -6,8 +6,8 @@ export class CreateAssignmentSubmissionDto {
   assignmentId: string;
 
   @IsString()
-  @IsNotEmpty()
-  studentId: string;
+  @IsOptional()
+  studentId?: string;
 
   @IsString()
   @IsOptional()

@@ -1,22 +1,41 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, DeepPartial } from 'typeorm';
 import { CreateAssignmentDto } from './dto/create-assignment.dto';
 import { UpdateAssignmentDto } from './dto/update-assignment.dto';
 import { Assignment } from './entities/assignment.entity';
+import { Mentor } from '../mentors/entities/mentor.entity';
 
 @Injectable()
 export class AssignmentsService {
   constructor(
     @InjectRepository(Assignment)
     private assignmentRepository: Repository<Assignment>,
+    @InjectRepository(Mentor)
+    private mentorRepository: Repository<Mentor>,
   ) {}
 
-  async create(createAssignmentDto: CreateAssignmentDto) {
-    const { dueAt, ...rest } = createAssignmentDto;
+  async create(createAssignmentDto: CreateAssignmentDto, userId?: string) {
+    let { mentorId } = createAssignmentDto;
+
+    if (!mentorId && userId) {
+      const mentor = await this.mentorRepository.findOne({
+        where: { user: { id: userId } },
+      });
+      if (mentor) {
+        mentorId = mentor.id;
+      }
+    }
+
+    if (!mentorId) {
+      throw new BadRequestException('mentorId is required');
+    }
+
+    const { dueAt, mentorId: _, ...rest } = createAssignmentDto;
 
     const assignmentData: DeepPartial<Assignment> = {
       ...rest,
+      mentorId,
       dueAt: dueAt ? new Date(dueAt) : undefined,
     };
 

@@ -2,22 +2,58 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeepPartial, ILike } from 'typeorm';
 import { randomBytes } from 'crypto';
-import { CreateCertificateDto } from './dto/create-certificate.dto';
+import { CreateCertificateDto, BulkCreateCertificateDto } from './dto/create-certificate.dto';
 import { UpdateCertificateDto } from './dto/update-certificate.dto';
 import { Certificate } from './entities/certificate.entity';
+import { Student } from '../students/entities/student.entity';
+import { Batch } from '../batch/entities/batch.entity';
+import { Course } from '../course/entities/course.entity';
+import { Enrollment } from '../enrollment/entities/enrollment.entity';
 
 @Injectable()
 export class CertificatesService {
   constructor(
     @InjectRepository(Certificate)
     private certificateRepository: Repository<Certificate>,
+    @InjectRepository(Student)
+    private studentRepository: Repository<Student>,
+    @InjectRepository(Batch)
+    private batchRepository: Repository<Batch>,
+    @InjectRepository(Course)
+    private courseRepository: Repository<Course>,
+    @InjectRepository(Enrollment)
+    private enrollmentRepository: Repository<Enrollment>,
   ) {}
 
   async create(createCertificateDto: CreateCertificateDto) {
-    const { issueDate, ...rest } = createCertificateDto;
+    let { issueDate, studentName, courseName, batchNumber, studentId, courseId, batchId, ...rest } = createCertificateDto;
+
+    if (!studentName) {
+      const student = await this.studentRepository.findOne({ where: { id: studentId } });
+      if (!student) throw new NotFoundException('Student not found');
+      studentName = student.name;
+    }
+
+    if (!courseName) {
+      const course = await this.courseRepository.findOne({ where: { id: courseId } });
+      if (!course) throw new NotFoundException('Course not found');
+      courseName = course.title;
+    }
+
+    if (!batchNumber) {
+      const batch = await this.batchRepository.findOne({ where: { id: batchId } });
+      if (!batch) throw new NotFoundException('Batch not found');
+      batchNumber = batch.name;
+    }
 
     const certData: DeepPartial<Certificate> = {
       ...rest,
+      studentId,
+      courseId,
+      batchId,
+      studentName,
+      courseName,
+      batchNumber,
       issueDate: new Date(issueDate),
       certificateNumber: `CERT-${randomBytes(4).toString('hex').toUpperCase()}`,
       verificationCode: randomBytes(8).toString('hex').toUpperCase(),
@@ -27,16 +63,60 @@ export class CertificatesService {
     return await this.certificateRepository.save(certificate);
   }
 
-  async createBulk(createCertificateDtos: CreateCertificateDto[]) {
-    const certsData = createCertificateDtos.map((dto) => {
-      const { issueDate, ...rest } = dto;
-      return {
-        ...rest,
-        issueDate: new Date(issueDate),
+  async createBulk(bulkDto: BulkCreateCertificateDto) {
+    const { 
+      batchId, 
+      courseId: providedCourseId, 
+      issueDate,
+      signature1Url,
+      signature2Url,
+      signature1Name,
+      signature1Designation,
+      signature2Name,
+      signature2Designation
+    } = bulkDto;
+    const finalIssueDate = issueDate ? new Date(issueDate) : new Date();
+
+    const batch = await this.batchRepository.findOne({ where: { id: batchId }, relations: { course: true } });
+    if (!batch) throw new NotFoundException('Batch not found');
+
+    let course;
+    if (providedCourseId) {
+      course = await this.courseRepository.findOne({ where: { id: providedCourseId } });
+    } else {
+      course = batch.course || await this.courseRepository.findOne({ where: { id: batch.course_id } });
+    }
+    if (!course) throw new NotFoundException('Course not found for this batch');
+
+    const enrollments = await this.enrollmentRepository.find({
+      where: { batch_id: batchId, status: 'ACTIVE' as any }, // adjust status if needed
+      relations: { student: true },
+    });
+
+    if (enrollments.length === 0) {
+      throw new NotFoundException('No active enrollments found for this batch');
+    }
+
+    const certsData: DeepPartial<Certificate>[] = [];
+    for (const enrollment of enrollments) {
+      certsData.push({
+        studentId: enrollment.student_id,
+        courseId: course.id,
+        batchId: batch.id,
+        studentName: enrollment.student?.name || 'Unknown Student',
+        courseName: course.title,
+        batchNumber: batch.name,
+        issueDate: finalIssueDate,
+        signature1Url,
+        signature2Url,
+        signature1Name,
+        signature1Designation,
+        signature2Name,
+        signature2Designation,
         certificateNumber: `CERT-${randomBytes(4).toString('hex').toUpperCase()}`,
         verificationCode: randomBytes(8).toString('hex').toUpperCase(),
-      };
-    });
+      });
+    }
 
     const certificates = this.certificateRepository.create(certsData);
     return await this.certificateRepository.save(certificates);

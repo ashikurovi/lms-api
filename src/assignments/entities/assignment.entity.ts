@@ -8,7 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Batch } from '../../batch/entities/batch.entity';
-import { User } from '../../users/entities/user.entity';
+import { Mentor } from '../../mentors/entities/mentor.entity';
 
 @Entity('assignments')
 export class Assignment {
@@ -27,9 +27,9 @@ export class Assignment {
   @Column()
   mentorId: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => Mentor)
   @JoinColumn({ name: 'mentorId' })
-  mentor: User;
+  mentor: Mentor;
 
   @Column()
   title: string;

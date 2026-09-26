@@ -37,7 +37,7 @@ export class CertificatesController {
   @Post('bulk')
   @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
   async createBulk(@Body() bulkDto: BulkCreateCertificateDto) {
-    const data = await this.certificatesService.createBulk(bulkDto.certificates);
+    const data = await this.certificatesService.createBulk(bulkDto);
     return {
       statusCode: HttpStatus.CREATED,
       message: `${data.length} certificates issued successfully in bulk`,

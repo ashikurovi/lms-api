@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeepPartial } from 'typeorm';
 import { CreateAssignmentSubmissionDto } from './dto/create-assignment_submission.dto';
@@ -13,6 +13,10 @@ export class AssignmentSubmissionsService {
   ) {}
 
   async create(createSubmissionDto: CreateAssignmentSubmissionDto) {
+    if (!createSubmissionDto.studentId) {
+      throw new BadRequestException('studentId is required');
+    }
+
     const submissionData: DeepPartial<AssignmentSubmission> = {
       ...createSubmissionDto,
       submittedAt: new Date(), // Automatically set submittedAt

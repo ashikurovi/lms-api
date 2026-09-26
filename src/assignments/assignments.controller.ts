@@ -27,11 +27,7 @@ export class AssignmentsController {
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
   async create(@Body() createAssignmentDto: CreateAssignmentDto, @Req() req: any) {
-    // Optionally set mentorId if not provided and the user is creating their own assignment
-    if (!createAssignmentDto.mentorId && req.user?.id) {
-      createAssignmentDto.mentorId = req.user.id;
-    }
-    const data = await this.assignmentsService.create(createAssignmentDto);
+    const data = await this.assignmentsService.create(createAssignmentDto, req.user?.id);
     return {
       statusCode: HttpStatus.CREATED,
       message: 'Assignment created successfully',
