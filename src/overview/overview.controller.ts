@@ -8,10 +8,10 @@ import { UserRole } from '../users/entities/user.entity';
 @Controller('overview')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OverviewController {
-  constructor(private readonly overviewService: OverviewService) {}
+  constructor(private readonly overviewService: OverviewService) { }
 
   @Get('admin')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
   getAdminOverview(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
