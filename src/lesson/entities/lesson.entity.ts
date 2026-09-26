@@ -33,7 +33,7 @@ export class Lesson {
   @Column({ nullable: true })
   module_id: string;
 
-  @ManyToOne(() => CourseModule, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => CourseModule, (module) => module.lessons, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'module_id' })
   module: CourseModule;
 

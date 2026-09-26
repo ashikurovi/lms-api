@@ -13,7 +13,11 @@ export class MentorsService {
   ) {}
 
   async create(createMentorDto: CreateMentorDto) {
-    const mentor = this.mentorRepository.create(createMentorDto);
+    const { userId, ...rest } = createMentorDto;
+    const mentor = this.mentorRepository.create({
+      ...rest,
+      user: { id: userId },
+    });
     return await this.mentorRepository.save(mentor);
   }
 

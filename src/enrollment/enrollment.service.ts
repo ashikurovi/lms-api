@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository, DataSource, Not } from 'typeorm';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
 import { UpdateEnrollmentDto } from './dto/update-enrollment.dto';
 import { CreateManualEnrollmentDto } from './dto/create-manual-enrollment.dto';
@@ -14,6 +14,7 @@ import {
   InstallmentStatus,
 } from '../installment/entities/installment.entity';
 import { Payment, PaymentStatus, PaymentGateway, PaymentEnvironment } from '../payments/entities/payment.entity';
+import { Batch } from '../batch/entities/batch.entity';
 
 @Injectable()
 export class EnrollmentService {
@@ -29,11 +30,23 @@ export class EnrollmentService {
     const {
       student_id,
       batch_id,
-      total_amount,
       discount_amount = 0,
       installment_count,
       installment_due_dates,
     } = createEnrollmentDto;
+
+    const batch = await this.dataSource.manager.findOne(Batch, {
+      where: { id: batch_id },
+      relations: { course: true },
+    });
+
+    if (!batch || !batch.course) {
+      throw new NotFoundException('Batch or Course not found for enrollment');
+    }
+
+    // Set total_amount to the course's selling price (discount_price)
+    const total_amount = Number(batch.course.discount_price || batch.course.price);
+
 
     const payable_amount = total_amount - discount_amount;
 
@@ -41,6 +54,19 @@ export class EnrollmentService {
       throw new BadRequestException(
         'Discount amount cannot exceed total amount',
       );
+    }
+
+    // Check if student is already enrolled in this batch and not cancelled
+    const existingEnrollment = await this.enrollmentRepository.findOne({
+      where: {
+        student_id,
+        batch_id,
+        status: Not(EnrollmentStatus.CANCELLED),
+      },
+    });
+
+    if (existingEnrollment) {
+      throw new BadRequestException('Student is already enrolled in this batch');
     }
 
     // Use a transaction to create enrollment + installments atomically
@@ -108,12 +134,22 @@ export class EnrollmentService {
     const {
       student_id,
       batch_id,
-      total_amount,
       discount_amount = 0,
       paid_amount,
       transaction_id,
     } = dto;
 
+    const batch = await this.dataSource.manager.findOne(Batch, {
+      where: { id: batch_id },
+      relations: { course: true },
+    });
+
+    if (!batch || !batch.course) {
+      throw new NotFoundException('Batch or Course not found for enrollment');
+    }
+
+    // Set total_amount to the course's selling price (discount_price)
+    const total_amount = Number(batch.course.discount_price || batch.course.price);
     const payable_amount = total_amount - discount_amount;
     const due_amount = payable_amount - paid_amount;
 
@@ -122,6 +158,19 @@ export class EnrollmentService {
     }
     if (due_amount < 0) {
       throw new BadRequestException('Paid amount cannot exceed payable amount');
+    }
+
+    // Check if student is already enrolled in this batch and not cancelled
+    const existingEnrollment = await this.enrollmentRepository.findOne({
+      where: {
+        student_id,
+        batch_id,
+        status: Not(EnrollmentStatus.CANCELLED),
+      },
+    });
+
+    if (existingEnrollment) {
+      throw new BadRequestException('Student is already enrolled in this batch');
     }
 
     return await this.dataSource.transaction(async (manager) => {

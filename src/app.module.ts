@@ -6,7 +6,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { CategoryModule } from './category/category.module';
 import { MentorsModule } from './mentors/mentors.module';
 import { StudentsModule } from './students/students.module';
 import { CtagoriesModule } from './ctagories/ctagories.module';
@@ -47,7 +46,6 @@ import { OverviewModule } from './overview/overview.module';
     UsersModule,
     AuthModule,
     UploadsModule,
-    CategoryModule,
     MentorsModule,
     StudentsModule,
     CtagoriesModule,

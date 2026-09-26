@@ -6,9 +6,11 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
 } from 'typeorm';
 import { Course } from '../../course/entities/course.entity';
+import { Lesson } from '../../lesson/entities/lesson.entity';
 
 export enum ModuleStatus {
   DRAFT = 'draft',
@@ -24,9 +26,12 @@ export class CourseModule {
   @Column({ nullable: true })
   course_id: string;
 
-  @ManyToOne(() => Course, { nullable: true, onDelete: 'CASCADE' })
+  @ManyToOne(() => Course, (course) => course.modules, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'course_id' })
   course: Course;
+
+  @OneToMany(() => Lesson, (lesson) => lesson.module)
+  lessons: Lesson[];
 
   @Column()
   title: string;

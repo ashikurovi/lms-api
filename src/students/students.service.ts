@@ -118,7 +118,11 @@ export class StudentsService {
   }
 
   async create(createStudentDto: CreateStudentDto) {
-    const student = this.studentRepository.create(createStudentDto);
+    const { userId, ...rest } = createStudentDto;
+    const student = this.studentRepository.create({
+      ...rest,
+      ...(userId && { user: { id: userId } }),
+    });
     return await this.studentRepository.save(student);
   }
 

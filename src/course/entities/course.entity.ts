@@ -7,11 +7,13 @@ import {
   DeleteDateColumn,
   ManyToOne,
   ManyToMany,
+  OneToMany,
   JoinColumn,
   JoinTable,
 } from 'typeorm';
 import { CourseCategory } from '../../ctagories/entities/ctagory.entity';
 import { Mentor } from '../../mentors/entities/mentor.entity';
+import { CourseModule } from '../../module/entities/module.entity';
 
 export enum CourseLevel {
   BEGINNER = 'beginner',
@@ -118,6 +120,9 @@ export class Course {
     inverseJoinColumn: { name: 'mentor_id', referencedColumnName: 'id' },
   })
   mentors: Mentor[];
+
+  @OneToMany(() => CourseModule, (module) => module.course)
+  modules: CourseModule[];
 
   @Column({ type: 'timestamp', nullable: true })
   published_at: Date | null;

@@ -17,11 +17,11 @@ export class CreateManualEnrollmentDto {
   @IsUUID()
   batch_id: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Type(() => Number)
-  total_amount: number;
+  total_amount?: number;
 
   @IsOptional()
   @IsNumber({ maxDecimalPlaces: 2 })
