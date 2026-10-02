@@ -1,6 +1,8 @@
 import { Controller, Post, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { Public } from '../auth/decorators/public.decorator';
 
@@ -11,7 +13,14 @@ export class UploadsController {
   @Post()
   @Public() // Make public so anyone can upload, or remove to protect it
   @UseInterceptors(FileInterceptor('file', {
-    storage: memoryStorage(),
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = uuidv4();
+        const ext = extname(file.originalname);
+        cb(null, `${uniqueSuffix}${ext}`);
+      },
+    }),
     fileFilter: (req, file, cb) => {
       if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
         return cb(new BadRequestException('Only image files are allowed!'), false);
@@ -25,30 +34,14 @@ export class UploadsController {
     }
 
     try {
-      const base64Image = file.buffer.toString('base64');
-      const formData = new URLSearchParams();
-      formData.append('image', base64Image);
-
-      const apiKey = this.configService.get<string>('IMGBB_API_KEY') || '7f7b2615e37d49f2db2eec28c9007bc4';
-      const apiUrl = this.configService.get<string>('IMGBB_API_URL') || 'https://api.imgbb.com/1/upload';
-
-      const response = await fetch(`${apiUrl}?key=${apiKey}`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new BadRequestException(data.error?.message || 'Failed to upload image to ImgBB');
-      }
+      const fileUrl = `${process.env.API_URL || 'http://localhost:8000'}/uploads/${file.filename}`;
 
       return {
         statusCode: 201,
         message: 'File uploaded successfully',
         data: {
-          url: data.data.url,
-          filename: file.originalname,
+          url: fileUrl,
+          filename: file.filename,
         }
       };
     } catch (error: any) {

@@ -62,9 +62,9 @@ export class AuthController {
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getMe(@Request() req: any) {
-    // Requires JwtAuthGuard to be active (assuming global or applied via module)
-    // The decoded JWT token will be placed in req.user
-    return { statusCode: HttpStatus.OK, user: req.user };
+    const user = await this.authService.getMe(req.user.id);
+    const isDeviceLocked = (user.devices || []).length > 3;
+    return { statusCode: HttpStatus.OK, user: { ...user, isDeviceLocked } };
   }
   @Post('logout')
   @HttpCode(HttpStatus.OK)

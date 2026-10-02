@@ -31,6 +31,7 @@ export class CouponsService {
   async validateCoupon(code: string, courseId?: string) {
     const coupon = await this.couponRepository.findOne({
       where: { code },
+      relations: { batch: true },
     });
 
     if (!coupon) {
@@ -41,7 +42,7 @@ export class CouponsService {
       throw new BadRequestException('Coupon is inactive');
     }
 
-    if (coupon.courseId && coupon.courseId !== courseId) {
+    if (courseId && coupon.batch && coupon.batch.course_id !== courseId) {
       throw new BadRequestException('Coupon is not valid for this course');
     }
 
@@ -80,12 +81,12 @@ export class CouponsService {
       where.code = ILike(`%${search}%`);
     }
     if (courseId) {
-      where.courseId = courseId;
+      where.batch = { course_id: courseId };
     }
 
     const [items, total] = await this.couponRepository.findAndCount({
       where,
-      relations: { course: true },
+      relations: { batch: true },
       skip,
       take: limit,
       order: { createdAt: 'DESC' },
@@ -103,7 +104,7 @@ export class CouponsService {
   async findOne(id: string) {
     const coupon = await this.couponRepository.findOne({
       where: { id },
-      relations: { course: true },
+      relations: { batch: true },
     });
     if (!coupon) {
       throw new NotFoundException(`Coupon with ID ${id} not found`);

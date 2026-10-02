@@ -9,6 +9,7 @@ import {
   HttpStatus,
   UseGuards,
   Query,
+  Request,
 } from '@nestjs/common';
 import { EnrollmentService } from './enrollment.service';
 import { CreateEnrollmentDto } from './dto/create-enrollment.dto';
@@ -69,6 +70,33 @@ export class EnrollmentController {
     };
   }
 
+  @Get('my')
+  @Roles(UserRole.STUDENT, UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  async getMyEnrollments(@Request() req: any) {
+    const userId = req.user.id;
+    const studentId = await this.enrollmentService.getStudentIdByUserId(userId);
+    
+    const data = await this.enrollmentService.findAllByStudent(studentId);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'My enrollments retrieved successfully',
+      data,
+    };
+  }
+
+  @Post('my/progress/:lessonId')
+  @Roles(UserRole.STUDENT)
+  async markLessonCompleted(@Param('lessonId') lessonId: string, @Request() req: any) {
+    const userId = req.user.id;
+    const studentId = await this.enrollmentService.getStudentIdByUserId(userId);
+    const data = await this.enrollmentService.markLessonCompleted(studentId, lessonId);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Lesson progress updated successfully',
+      data,
+    };
+  }
+
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
   async findOne(@Param('id') id: string) {
@@ -76,6 +104,31 @@ export class EnrollmentController {
     return {
       statusCode: HttpStatus.OK,
       message: 'Enrollment retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('student/:studentId')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.STUDENT)
+  async findAllByStudent(@Param('studentId') studentId: string) {
+    const data = await this.enrollmentService.findAllByStudent(studentId);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Student enrollments retrieved successfully',
+      data,
+    };
+  }
+
+  @Get('student/:studentId/batch/:batchId')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.STUDENT)
+  async findByStudentAndBatch(
+    @Param('studentId') studentId: string,
+    @Param('batchId') batchId: string,
+  ) {
+    const data = await this.enrollmentService.findByStudentAndBatch(studentId, batchId);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Student enrollment retrieved successfully',
       data,
     };
   }

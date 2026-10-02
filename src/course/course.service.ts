@@ -72,7 +72,7 @@ export class CourseService {
 
     const [items, total] = await this.courseRepository.findAndCount({
       where,
-      relations: { category: true, mentors: true },
+      relations: { category: true, mentors: true, batches: true },
       skip,
       take: limit,
       order: { created_at: 'DESC' },
@@ -90,7 +90,7 @@ export class CourseService {
   async findOne(id: string) {
     const course = await this.courseRepository.findOne({
       where: { id },
-      relations: { category: true, mentors: true },
+      relations: { category: true, mentors: true, batches: true },
     });
     if (!course) {
       throw new NotFoundException(`Course with ID ${id} not found`);

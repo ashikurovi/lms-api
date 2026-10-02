@@ -90,6 +90,15 @@ export class Batch {
   @Column({ default: 'Asia/Dhaka' })
   timezone: string;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  price: number;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  discount_price: number;
+
+  @Column({ nullable: true })
+  fb_group_link: string;
+
   @CreateDateColumn()
   created_at: Date;
 

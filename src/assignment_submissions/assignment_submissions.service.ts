@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeepPartial } from 'typeorm';
+import { Repository, DeepPartial, DataSource } from 'typeorm';
 import { CreateAssignmentSubmissionDto } from './dto/create-assignment_submission.dto';
 import { UpdateAssignmentSubmissionDto } from './dto/update-assignment_submission.dto';
 import { AssignmentSubmission } from './entities/assignment_submission.entity';
@@ -10,9 +10,14 @@ export class AssignmentSubmissionsService {
   constructor(
     @InjectRepository(AssignmentSubmission)
     private submissionRepository: Repository<AssignmentSubmission>,
+    private dataSource: DataSource,
   ) {}
 
-  async create(createSubmissionDto: CreateAssignmentSubmissionDto) {
+  async create(createSubmissionDto: CreateAssignmentSubmissionDto, userId?: string) {
+    if (!createSubmissionDto.studentId && userId) {
+      createSubmissionDto.studentId = userId;
+    }
+
     if (!createSubmissionDto.studentId) {
       throw new BadRequestException('studentId is required');
     }
@@ -32,18 +37,25 @@ export class AssignmentSubmissionsService {
     assignmentId?: string,
     studentId?: string,
     status?: string,
+    userId?: string,
   ) {
     const page = parseInt(pageStr ?? '1', 10) || 1;
     const limit = parseInt(limitStr ?? '10', 10) || 10;
     const skip = (page - 1) * limit;
+
+    let resolvedStudentId = studentId;
+
+    if (!resolvedStudentId && userId) {
+      resolvedStudentId = userId;
+    }
 
     const where: any = {};
 
     if (assignmentId) {
       where.assignmentId = assignmentId;
     }
-    if (studentId) {
-      where.studentId = studentId;
+    if (resolvedStudentId) {
+      where.studentId = resolvedStudentId;
     }
     if (status) {
       where.status = status;

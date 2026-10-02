@@ -12,6 +12,7 @@ import { Student } from '../../students/entities/student.entity';
 import { Batch } from '../../batch/entities/batch.entity';
 import { Installment } from '../../installment/entities/installment.entity';
 import { Payment } from '../../payments/entities/payment.entity';
+import { LessonProgress } from '../../lesson/entities/lesson-progress.entity';
 
 export enum EnrollmentStatus {
   PENDING = 'PENDING',
@@ -70,6 +71,9 @@ export class Enrollment {
 
   @OneToMany(() => Payment, (payment) => payment.enrollment)
   payments: Payment[];
+
+  @OneToMany(() => LessonProgress, (lp) => lp.enrollment)
+  lesson_progress: LessonProgress[];
 
   @CreateDateColumn()
   created_at: Date;

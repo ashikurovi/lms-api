@@ -27,12 +27,7 @@ export class AssignmentSubmissionsController {
 
   @Post()
   async create(@Body() createSubmissionDto: CreateAssignmentSubmissionDto, @Req() req: any) {
-    // If user is a student, ensure they only submit for themselves
-    if (!createSubmissionDto.studentId && req.user?.id) {
-      createSubmissionDto.studentId = req.user.id;
-    }
-    
-    const data = await this.submissionsService.create(createSubmissionDto);
+    const data = await this.submissionsService.create(createSubmissionDto, req.user?.id);
     return {
       statusCode: HttpStatus.CREATED,
       message: 'Assignment submitted successfully',
@@ -47,6 +42,7 @@ export class AssignmentSubmissionsController {
     @Query('assignmentId') assignmentId?: string,
     @Query('studentId') studentId?: string,
     @Query('status') status?: string,
+    @Req() req?: any,
   ) {
     const data = await this.submissionsService.findAll(
       page,
@@ -54,6 +50,7 @@ export class AssignmentSubmissionsController {
       assignmentId,
       studentId,
       status,
+      req?.user?.id
     );
     return {
       statusCode: HttpStatus.OK,

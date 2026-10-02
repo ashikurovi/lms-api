@@ -46,6 +46,9 @@ export class User {
   phone: string;
 
   @Column({ nullable: true })
+  avatar: string;
+
+  @Column({ nullable: true })
   lastlogin: Date;
 
   @Column({ type: 'simple-array', nullable: true })

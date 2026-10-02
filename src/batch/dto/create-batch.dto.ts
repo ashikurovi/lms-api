@@ -7,6 +7,7 @@ import {
   IsUUID,
   IsDateString,
   Min,
+  IsNumber,
 } from 'class-validator';
 import { BatchStatus, BatchMode, ClassType } from '../entities/batch.entity';
 
@@ -59,4 +60,18 @@ export class CreateBatchDto {
   @IsOptional()
   @IsString()
   timezone?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  price?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  discount_price?: number;
+
+  @IsOptional()
+  @IsString()
+  fb_group_link?: string;
 }

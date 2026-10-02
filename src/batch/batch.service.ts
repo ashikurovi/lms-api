@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, DeepPartial } from 'typeorm';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateBatchDto } from './dto/update-batch.dto';
-import { Batch } from './entities/batch.entity';
+import { Batch, BatchStatus } from './entities/batch.entity';
 
 @Injectable()
 export class BatchService {
@@ -32,6 +32,44 @@ export class BatchService {
         ? new Date(registration_end)
         : undefined,
     };
+
+    const batch = this.batchRepository.create(batchData);
+    return await this.batchRepository.save(batch);
+  }
+
+  async launch(createBatchDto: CreateBatchDto) {
+    const {
+      start_date,
+      end_date,
+      registration_start,
+      registration_end,
+      ...rest
+    } = createBatchDto;
+
+    const batchData: DeepPartial<Batch> = {
+      ...rest,
+      start_date: new Date(start_date),
+      end_date: new Date(end_date),
+      registration_start: registration_start
+        ? new Date(registration_start)
+        : undefined,
+      registration_end: registration_end
+        ? new Date(registration_end)
+        : undefined,
+    };
+
+    // Close previous batches for the same course
+    if (batchData.course_id) {
+      await this.batchRepository
+        .createQueryBuilder()
+        .update(Batch)
+        .set({ status: BatchStatus.ONGOING })
+        .where('course_id = :courseId', { courseId: batchData.course_id })
+        .andWhere('status IN (:...statuses)', {
+          statuses: [BatchStatus.UPCOMING, BatchStatus.OPEN],
+        })
+        .execute();
+    }
 
     const batch = this.batchRepository.create(batchData);
     return await this.batchRepository.save(batch);

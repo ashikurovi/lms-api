@@ -35,6 +35,17 @@ export class BatchController {
     };
   }
 
+  @Post('launch')
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  async launch(@Body() createBatchDto: CreateBatchDto) {
+    const data = await this.batchService.launch(createBatchDto);
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: 'Batch launched successfully and previous batches turned off',
+      data,
+    };
+  }
+
   @Public()
   @Get()
   async findAll(

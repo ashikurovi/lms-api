@@ -66,15 +66,6 @@ export class CreateCourseDto {
   @IsEnum(DurationUnit)
   duration_unit?: DurationUnit;
 
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  price?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  discount_price?: number;
 
   @IsOptional()
   @IsEnum(CourseStatus)

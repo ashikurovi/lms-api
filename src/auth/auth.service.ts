@@ -112,9 +112,6 @@ export class AuthService {
     user.lastlogin = new Date();
     let devices = user.devices || [];
     if (device && !devices.includes(device)) {
-      if (devices.length >= 3) {
-        throw new ForbiddenException('Device limit reached. You can only log in from up to 3 devices.');
-      }
       devices.push(device);
     }
     await this.usersService.update(user.id, { lastlogin: user.lastlogin, devices });
@@ -147,9 +144,6 @@ export class AuthService {
     user.lastlogin = new Date();
     let devices = user.devices || [];
     if (device && !devices.includes(device)) {
-      if (devices.length >= 3) {
-        throw new ForbiddenException('Device limit reached. You can only log in from up to 3 devices.');
-      }
       devices.push(device);
     }
     await this.usersService.update(user.id, { lastlogin: user.lastlogin, devices });
@@ -230,6 +224,10 @@ export class AuthService {
     const user = await this.usersService.findOne(userId);
     await this.usersService.update(user.id, { devices: [] });
     return { message: 'Logged out from all devices successfully' };
+  }
+
+  async getMe(userId: string) {
+    return await this.usersService.findOne(userId);
   }
 }
 

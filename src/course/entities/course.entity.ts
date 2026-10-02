@@ -14,6 +14,7 @@ import {
 import { CourseCategory } from '../../ctagories/entities/ctagory.entity';
 import { Mentor } from '../../mentors/entities/mentor.entity';
 import { CourseModule } from '../../module/entities/module.entity';
+import { Batch } from '../../batch/entities/batch.entity';
 
 export enum CourseLevel {
   BEGINNER = 'beginner',
@@ -93,11 +94,6 @@ export class Course {
   })
   duration_unit: DurationUnit;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
-  price: number;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  discount_price: number;
 
   @Column({
     type: 'enum',
@@ -123,6 +119,9 @@ export class Course {
 
   @OneToMany(() => CourseModule, (module) => module.course)
   modules: CourseModule[];
+
+  @OneToMany(() => Batch, (batch) => batch.course)
+  batches: Batch[];
 
   @Column({ type: 'timestamp', nullable: true })
   published_at: Date | null;

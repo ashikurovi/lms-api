@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, UseGuards, Query, UseInterceptors, UploadedFile, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus, UseGuards, Query, UseInterceptors, UploadedFile, BadRequestException, Request } from '@nestjs/common';
 import { StudentsService } from './students.service';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
@@ -15,7 +15,7 @@ import { v4 as uuidv4 } from 'uuid';
 @Controller('students')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class StudentsController {
-  constructor(private readonly studentsService: StudentsService) {}
+  constructor(private readonly studentsService: StudentsService) { }
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
@@ -76,8 +76,47 @@ export class StudentsController {
   @Public()
   @Get(':id')
   async findOne(@Param('id') id: string) {
+    if (id === 'my') return; // Handled below
     const data = await this.studentsService.findOne(id);
     return { statusCode: HttpStatus.OK, message: 'Student retrieved successfully', data };
+  }
+
+  @Get('profile/my')
+  @Roles(UserRole.STUDENT, UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  async getMyProfile(@Request() req: any) {
+    const userId = req.user.id;
+    const student = await this.studentsService.findByUserId(userId);
+    return { statusCode: HttpStatus.OK, message: 'Student profile retrieved successfully', data: student };
+  }
+
+  @Patch('profile/my')
+  @Roles(UserRole.STUDENT, UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @UseInterceptors(FileInterceptor('profileImage', {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = uuidv4();
+        const ext = extname(file.originalname);
+        cb(null, `${uniqueSuffix}${ext}`);
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+        return cb(new BadRequestException('Only image files are allowed!'), false);
+      }
+      cb(null, true);
+    },
+  }))
+  async updateMyProfile(@Request() req: any, @Body() updateStudentDto: UpdateStudentDto, @UploadedFile() file?: Express.Multer.File) {
+    const userId = req.user.id;
+    const student = await this.studentsService.findByUserId(userId);
+
+    if (file) {
+      const fileUrl = `${process.env.API_URL || 'http://localhost:8000'}/uploads/${file.filename}`;
+      updateStudentDto.profileImage = fileUrl;
+    }
+    const data = await this.studentsService.update(student.id, updateStudentDto);
+    return { statusCode: HttpStatus.OK, message: 'Student profile updated successfully', data };
   }
 
   @Patch(':id')

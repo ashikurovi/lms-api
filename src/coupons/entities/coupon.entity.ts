@@ -7,7 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Course } from '../../course/entities/course.entity';
+import { Batch } from '../../batch/entities/batch.entity';
 
 export enum DiscountType {
   PERCENTAGE = 'percentage',
@@ -23,11 +23,11 @@ export class Coupon {
   code: string;
 
   @Column({ nullable: true })
-  courseId: string;
+  batchId: string;
 
-  @ManyToOne(() => Course, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'courseId' })
-  course: Course;
+  @ManyToOne(() => Batch, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'batchId' })
+  batch: Batch;
 
   @Column({
     type: 'enum',

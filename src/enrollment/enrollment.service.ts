@@ -16,6 +16,8 @@ import {
 import { Payment, PaymentStatus, PaymentGateway, PaymentEnvironment } from '../payments/entities/payment.entity';
 import { Batch } from '../batch/entities/batch.entity';
 
+import { LessonProgress } from '../lesson/entities/lesson-progress.entity';
+
 @Injectable()
 export class EnrollmentService {
   constructor(
@@ -23,8 +25,28 @@ export class EnrollmentService {
     private enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Installment)
     private installmentRepository: Repository<Installment>,
+    @InjectRepository(LessonProgress)
+    private lessonProgressRepository: Repository<LessonProgress>,
     private dataSource: DataSource,
   ) {}
+
+  async markLessonCompleted(studentId: string, lessonId: string) {
+    let progress = await this.lessonProgressRepository.findOne({
+      where: { student_id: studentId, lesson_id: lessonId },
+    });
+    
+    if (!progress) {
+      progress = this.lessonProgressRepository.create({
+        student_id: studentId,
+        lesson_id: lessonId,
+        is_completed: true,
+      });
+    } else {
+      progress.is_completed = true;
+    }
+    
+    return await this.lessonProgressRepository.save(progress);
+  }
 
   async create(createEnrollmentDto: CreateEnrollmentDto) {
     const {
@@ -44,8 +66,8 @@ export class EnrollmentService {
       throw new NotFoundException('Batch or Course not found for enrollment');
     }
 
-    // Set total_amount to the course's selling price (discount_price)
-    const total_amount = Number(batch.course.discount_price || batch.course.price);
+    // Set total_amount to the batch's selling price (discount_price)
+    const total_amount = Number(batch.discount_price || batch.price || 0);
 
 
     const payable_amount = total_amount - discount_amount;
@@ -148,8 +170,8 @@ export class EnrollmentService {
       throw new NotFoundException('Batch or Course not found for enrollment');
     }
 
-    // Set total_amount to the course's selling price (discount_price)
-    const total_amount = Number(batch.course.discount_price || batch.course.price);
+    // Set total_amount to the batch's selling price (discount_price)
+    const total_amount = Number(batch.discount_price || batch.price || 0);
     const payable_amount = total_amount - discount_amount;
     const due_amount = payable_amount - paid_amount;
 
@@ -259,7 +281,20 @@ export class EnrollmentService {
 
     const [items, total] = await this.enrollmentRepository.findAndCount({
       where,
-      relations: { student: true, batch: true, installments: true },
+      relations: { 
+        student: true, 
+        batch: {
+          course: {
+            category: true,
+            mentors: true,
+            modules: {
+              lessons: true,
+            }
+          }
+        }, 
+        installments: true,
+        lesson_progress: true
+      },
       skip,
       take: limit,
       order: { created_at: 'DESC' },
@@ -279,7 +314,15 @@ export class EnrollmentService {
       where: { id },
       relations: {
         student: true,
-        batch: true,
+        batch: {
+          course: {
+            category: true,
+            mentors: true,
+            modules: {
+              lessons: true,
+            }
+          }
+        },
         installments: { payments: true },
         payments: true,
       },
@@ -290,6 +333,63 @@ export class EnrollmentService {
     }
 
     return enrollment;
+  }
+
+  async findByStudentAndBatch(studentId: string, batchId: string) {
+    const enrollment = await this.enrollmentRepository.findOne({
+      where: { student_id: studentId, batch_id: batchId },
+      relations: {
+        student: true,
+        batch: {
+          course: {
+            category: true,
+            mentors: true,
+            modules: {
+              lessons: true,
+            }
+          }
+        },
+        installments: { payments: true },
+        payments: true,
+      },
+    });
+
+    if (!enrollment) {
+      throw new NotFoundException(`Enrollment for student ${studentId} in batch ${batchId} not found`);
+    }
+
+    return enrollment;
+  }
+
+  async findAllByStudent(studentId: string) {
+    const enrollments = await this.enrollmentRepository.find({
+      where: { student_id: studentId },
+      relations: {
+        student: true,
+        batch: { 
+          course: {
+            category: true,
+            mentors: true,
+            modules: {
+              lessons: true,
+            }
+          } 
+        },
+        installments: { payments: true },
+        payments: true,
+      },
+      order: { created_at: 'DESC' },
+    });
+
+    const progresses = await this.lessonProgressRepository.find({
+      where: { student_id: studentId }
+    });
+
+    enrollments.forEach(enr => {
+      (enr as any).lesson_progress = progresses;
+    });
+
+    return enrollments;
   }
 
   async update(id: string, updateEnrollmentDto: UpdateEnrollmentDto) {
@@ -327,5 +427,19 @@ export class EnrollmentService {
     const enrollment = await this.findOne(id);
     enrollment.status = EnrollmentStatus.CANCELLED;
     return await this.enrollmentRepository.save(enrollment);
+  }
+
+  async getStudentIdByUserId(userId: string): Promise<string> {
+    try {
+      const student = await this.dataSource.manager.findOne('Student', {
+        where: { user: { id: userId } }
+      });
+      if (student && (student as any).id) {
+        return (student as any).id;
+      }
+    } catch (e) {
+      console.error('Failed to find student by user id', e);
+    }
+    return userId; // Fallback
   }
 }

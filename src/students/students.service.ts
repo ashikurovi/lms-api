@@ -157,6 +157,14 @@ export class StudentsService {
     return student;
   }
 
+  async findByUserId(userId: string) {
+    const student = await this.studentRepository.findOne({ where: { user: { id: userId } }, relations: { user: true } });
+    if (!student) {
+      throw new NotFoundException(`Student profile not found for user ID ${userId}`);
+    }
+    return student;
+  }
+
   async update(id: string, updateStudentDto: UpdateStudentDto) {
     const student = await this.findOne(id);
     const updatedStudent = Object.assign(student, updateStudentDto);
