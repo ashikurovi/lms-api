@@ -39,8 +39,10 @@ export class AuthService {
     await this.otpRepository.save(otpRecord);
 
     // 4. Send OTP via BulkSMSBD API
-    const apiKey = process.env.BULKSMSBD_API_KEY
-    const senderId = process.env.BULKSMSBD_SENDER_ID
+    const apiKey = process.env.BULKSMSBD_API_KEY || "UivVa73bujGUIqNCr6s6";
+    const senderId = process.env.BULKSMSBD_SENDER_ID || "8809617625025";
+
+    console.log(`[DEV OTP] Generated OTP for ${phone}: ${otpCode}`);
 
     if (!senderId) {
       console.warn(`[WARNING] BULKSMSBD_SENDER_ID is missing. SMS to ${phone} not sent. OTP is ${otpCode}`);
@@ -48,7 +50,14 @@ export class AuthService {
     }
 
     const message = encodeURIComponent(`Your OTP code is ${otpCode}. It is valid for 5 minutes.`);
-    const smsUrl = `http://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${phone}&senderid=${senderId}&message=${message}`;
+    let formattedPhone = phone.replace(/\D/g, ''); // Remove +, -, spaces, etc.
+
+    // BulkSMSBD often requires the 880 country code format to route properly to all operators
+    if (formattedPhone.length === 11 && formattedPhone.startsWith('01')) {
+      formattedPhone = '88' + formattedPhone;
+    }
+
+    const smsUrl = `http://bulksmsbd.net/api/smsapi?api_key=${apiKey}&type=text&number=${formattedPhone}&senderid=${senderId}&message=${message}`;
 
     try {
       const response = await fetch(smsUrl);
@@ -199,7 +208,7 @@ export class AuthService {
     const bcrypt = require('bcrypt');
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
-    
+
     // We assume usersService has an update method or we can save via a repository
     // Let's call a theoretical update method or save it if we have access
     // Wait, usersService in NestJS typically has an update method, but I need to make sure
@@ -212,10 +221,10 @@ export class AuthService {
   async logout(userId: string, deviceToRemove: string) {
     // UsersService.findOne might throw NotFoundException if not found
     const user = await this.usersService.findOne(userId);
-    
+
     const devices = user.devices || [];
     const newDevices = devices.filter(d => d !== deviceToRemove);
-    
+
     await this.usersService.update(user.id, { devices: newDevices });
     return { message: 'Logged out successfully' };
   }

@@ -55,6 +55,7 @@ export class BatchController {
     @Query('course_id') courseId?: string,
     @Query('status') status?: string,
     @Query('mode') mode?: string,
+    @Query('mentor_id') mentorId?: string,
   ) {
     const data = await this.batchService.findAll(
       page,
@@ -63,6 +64,7 @@ export class BatchController {
       courseId,
       status,
       mode,
+      mentorId,
     );
     return {
       statusCode: HttpStatus.OK,

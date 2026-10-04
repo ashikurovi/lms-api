@@ -25,7 +25,7 @@ export class AssignmentsController {
   constructor(private readonly assignmentsService: AssignmentsService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.MENTOR)
   async create(@Body() createAssignmentDto: CreateAssignmentDto, @Req() req: any) {
     const data = await this.assignmentsService.create(createAssignmentDto, req.user?.id);
     return {
@@ -70,7 +70,7 @@ export class AssignmentsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.MENTOR)
   async update(
     @Param('id') id: string,
     @Body() updateAssignmentDto: UpdateAssignmentDto,
@@ -84,7 +84,7 @@ export class AssignmentsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.MENTOR)
   async remove(@Param('id') id: string) {
     const data = await this.assignmentsService.remove(id);
     return {

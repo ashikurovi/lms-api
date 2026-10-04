@@ -65,14 +65,12 @@ export class StudentsService {
 
     if (!user) {
       const rawPassword = password || 'Password123!';
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(rawPassword, salt);
 
       user = await this.usersService.create({
         name,
         email,
         phone: phone || '',
-        password: hashedPassword,
+        password: rawPassword,
         role: UserRole.STUDENT,
       });
     }

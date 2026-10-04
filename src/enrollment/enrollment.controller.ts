@@ -26,8 +26,11 @@ export class EnrollmentController {
   constructor(private readonly enrollmentService: EnrollmentService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.STUDENT)
   async create(@Body() createEnrollmentDto: CreateEnrollmentDto) {
+    const studentId = await this.enrollmentService.getStudentIdByUserId(createEnrollmentDto.student_id);
+    createEnrollmentDto.student_id = studentId;
+    
     const data = await this.enrollmentService.create(createEnrollmentDto);
     return {
       statusCode: HttpStatus.CREATED,

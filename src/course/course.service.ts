@@ -87,13 +87,16 @@ export class CourseService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(identifier: string) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identifier);
+    const whereClause = isUuid ? { id: identifier } : { slug: identifier };
+
     const course = await this.courseRepository.findOne({
-      where: { id },
+      where: whereClause,
       relations: { category: true, mentors: true, batches: true },
     });
     if (!course) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
+      throw new NotFoundException(`Course with identifier ${identifier} not found`);
     }
     return course;
   }

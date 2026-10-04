@@ -50,7 +50,7 @@ export class AssignmentSubmissionsController {
       assignmentId,
       studentId,
       status,
-      req?.user?.id
+      req?.user
     );
     return {
       statusCode: HttpStatus.OK,

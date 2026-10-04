@@ -35,7 +35,7 @@ export class InstallmentController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.STUDENT)
   async findAll(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -56,7 +56,7 @@ export class InstallmentController {
   }
 
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.STUDENT)
   async findOne(@Param('id') id: string) {
     const data = await this.installmentService.findOne(id);
     return {

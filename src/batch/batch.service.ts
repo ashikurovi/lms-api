@@ -82,6 +82,7 @@ export class BatchService {
     courseId?: string,
     status?: string,
     mode?: string,
+    mentorId?: string,
   ) {
     const page = parseInt(pageStr ?? '1', 10) || 1;
     const limit = parseInt(limitStr ?? '10', 10) || 10;
@@ -101,6 +102,13 @@ export class BatchService {
     if (mode) {
       where.mode = mode;
     }
+    if (mentorId) {
+      where.course = {
+        mentors: {
+          user: { id: mentorId },
+        },
+      };
+    }
 
     const [items, total] = await this.batchRepository.findAndCount({
       where,
@@ -119,13 +127,34 @@ export class BatchService {
     };
   }
 
-  async findOne(id: string) {
+  async findOne(idOrCodeOrSlug: string) {
+    const isUuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(idOrCodeOrSlug);
+    
+    let whereCondition: any;
+    if (isUuid) {
+      whereCondition = { id: idOrCodeOrSlug };
+    } else {
+      whereCondition = [
+        { code: idOrCodeOrSlug },
+        { course: { slug: idOrCodeOrSlug } }
+      ];
+    }
+
     const batch = await this.batchRepository.findOne({
-      where: { id },
-      relations: { course: true },
+      where: whereCondition,
+      relations: { 
+        course: {
+          mentors: {
+            user: true
+          },
+          modules: {
+            lessons: true
+          }
+        } 
+      },
     });
     if (!batch) {
-      throw new NotFoundException(`Batch with ID ${id} not found`);
+      throw new NotFoundException(`Batch with identifier ${idOrCodeOrSlug} not found`);
     }
     return batch;
   }
@@ -152,6 +181,12 @@ export class BatchService {
           : null,
       }),
     });
+
+    // CRITICAL FIX: If course_id is being updated, we must remove the eagerly loaded `course` object.
+    // Otherwise, TypeORM will prioritize the old `batch.course` object over the new `course_id` value.
+    if (updateBatchDto.course_id) {
+      updatedBatch.course = { id: updateBatchDto.course_id } as any;
+    }
 
     return await this.batchRepository.save(updatedBatch);
   }

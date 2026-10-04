@@ -25,11 +25,15 @@ export class LiveSchedulesController {
   constructor(private readonly liveSchedulesService: LiveSchedulesService) {}
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.MENTOR)
   async create(@Body() createLiveScheduleDto: CreateLiveScheduleDto, @Req() req: any) {
     // Optionally set creator if not provided in the DTO
     if (!createLiveScheduleDto.createdBy && req.user?.id) {
       createLiveScheduleDto.createdBy = req.user.id;
+    }
+    // If the user is a mentor, enforce their own mentorId
+    if (req.user?.role === UserRole.MENTOR) {
+      createLiveScheduleDto.mentorId = req.user.id;
     }
     const data = await this.liveSchedulesService.create(createLiveScheduleDto);
     return {
@@ -74,7 +78,7 @@ export class LiveSchedulesController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.MENTOR)
   async update(
     @Param('id') id: string,
     @Body() updateLiveScheduleDto: UpdateLiveScheduleDto,
@@ -88,7 +92,7 @@ export class LiveSchedulesController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
+  @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER, UserRole.MENTOR)
   async remove(@Param('id') id: string) {
     const data = await this.liveSchedulesService.remove(id);
     return {

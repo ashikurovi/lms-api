@@ -4,6 +4,7 @@ import { Repository, DeepPartial, DataSource } from 'typeorm';
 import { CreateAssignmentSubmissionDto } from './dto/create-assignment_submission.dto';
 import { UpdateAssignmentSubmissionDto } from './dto/update-assignment_submission.dto';
 import { AssignmentSubmission } from './entities/assignment_submission.entity';
+import { Mentor } from '../mentors/entities/mentor.entity';
 
 @Injectable()
 export class AssignmentSubmissionsService {
@@ -37,7 +38,7 @@ export class AssignmentSubmissionsService {
     assignmentId?: string,
     studentId?: string,
     status?: string,
-    userId?: string,
+    user?: any,
   ) {
     const page = parseInt(pageStr ?? '1', 10) || 1;
     const limit = parseInt(limitStr ?? '10', 10) || 10;
@@ -45,8 +46,8 @@ export class AssignmentSubmissionsService {
 
     let resolvedStudentId = studentId;
 
-    if (!resolvedStudentId && userId) {
-      resolvedStudentId = userId;
+    if (!resolvedStudentId && user && user.role === 'student') {
+      resolvedStudentId = user.id;
     }
 
     const where: any = {};
@@ -59,6 +60,15 @@ export class AssignmentSubmissionsService {
     }
     if (status) {
       where.status = status;
+    }
+
+    if (user && user.role === 'mentor') {
+      const mentor = await this.dataSource.getRepository(Mentor).findOne({
+        where: { user: { id: user.id } },
+      });
+      if (mentor) {
+        where.assignment = { mentorId: mentor.id };
+      }
     }
 
     const [items, total] = await this.submissionRepository.findAndCount({

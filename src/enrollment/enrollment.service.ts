@@ -101,7 +101,7 @@ export class EnrollmentService {
         payable_amount,
         paid_amount: 0,
         due_amount: payable_amount,
-        status: EnrollmentStatus.ACTIVE,
+        status: EnrollmentStatus.PENDING,
         enrolled_at: new Date(),
       });
 
@@ -437,8 +437,24 @@ export class EnrollmentService {
       if (student && (student as any).id) {
         return (student as any).id;
       }
+      
+      // Auto-create Student if it doesn't exist
+      const user = await this.dataSource.manager.findOne('User', {
+        where: { id: userId }
+      });
+      
+      if (user) {
+        const newStudent = this.dataSource.manager.create('Student', {
+          user: user,
+          name: (user as any).name || 'Student',
+          email: (user as any).email || `${Date.now()}@example.com`,
+          phone: (user as any).phone || null,
+        });
+        const savedStudent = await this.dataSource.manager.save(newStudent);
+        return (savedStudent as any).id;
+      }
     } catch (e) {
-      console.error('Failed to find student by user id', e);
+      console.error('Failed to find or create student by user id', e);
     }
     return userId; // Fallback
   }

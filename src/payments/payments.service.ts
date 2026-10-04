@@ -14,7 +14,7 @@ import {
   PaymentEnvironment,
 } from './entities/payment.entity';
 import { Installment, InstallmentStatus } from '../installment/entities/installment.entity';
-import { Enrollment } from '../enrollment/entities/enrollment.entity';
+import { Enrollment, EnrollmentStatus } from '../enrollment/entities/enrollment.entity';
 import { SslcommerzService } from './sslcommerz.service';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -225,6 +225,7 @@ export class PaymentsService {
 
         enrollment.paid_amount = newPaidAmount;
         enrollment.due_amount = Math.max(0, newDueAmount);
+        enrollment.status = EnrollmentStatus.ACTIVE;
 
         await manager.save(Enrollment, enrollment);
       }
