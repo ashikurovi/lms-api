@@ -4,6 +4,10 @@ import { Repository } from 'typeorm';
 import { Payment, PaymentStatus } from '../payments/entities/payment.entity';
 import { Enrollment } from '../enrollment/entities/enrollment.entity';
 import { Installment, InstallmentStatus } from '../installment/entities/installment.entity';
+import { User, UserRole } from '../users/entities/user.entity';
+import { Course } from '../course/entities/course.entity';
+import { Lesson, LessonType } from '../lesson/entities/lesson.entity';
+import { LiveSchedule } from '../live_schedules/entities/live_schedule.entity';
 
 @Injectable()
 export class OverviewService {
@@ -14,6 +18,14 @@ export class OverviewService {
     private readonly enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Installment)
     private readonly installmentRepository: Repository<Installment>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Course)
+    private readonly courseRepository: Repository<Course>,
+    @InjectRepository(Lesson)
+    private readonly lessonRepository: Repository<Lesson>,
+    @InjectRepository(LiveSchedule)
+    private readonly liveScheduleRepository: Repository<LiveSchedule>,
   ) {}
 
   async getAdminOverview(startDate?: string, endDate?: string) {
@@ -92,6 +104,24 @@ export class OverviewService {
       totalDue,
       upcomingInstallments,
       paymentHistory,
+    };
+  }
+
+  async getPublicStats() {
+    const trainersCount = await this.userRepository.count({ where: { role: UserRole.MENTOR } });
+    const studentsCount = await this.userRepository.count({ where: { role: UserRole.STUDENT } });
+    const programsCount = await this.courseRepository.count();
+    const courseVideosCount = await this.lessonRepository.count({ where: { type: LessonType.VIDEO } });
+    const liveClassesCount = await this.liveScheduleRepository.count();
+
+    // Default fallbacks in case DB is very empty to keep the landing page looking good
+    return {
+      expertTrainers: trainersCount > 0 ? trainersCount : 15,
+      programs: programsCount > 0 ? programsCount : 12,
+      students: studentsCount > 0 ? studentsCount : 200,
+      courseVideos: courseVideosCount > 0 ? courseVideosCount : 312,
+      liveClasses: liveClassesCount > 0 ? liveClassesCount : 45,
+      yearsOfExperience: 10,
     };
   }
 }

@@ -1,3 +1,4 @@
+import { NoticesModule } from "./notices/notices.module";
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -24,14 +25,21 @@ import { ResourcesModule } from './resources/resources.module';
 import { CertificatesModule } from './certificates/certificates.module';
 import { CouponsModule } from './coupons/coupons.module';
 import { OverviewModule } from './overview/overview.module';
+import { BlogsModule } from './blogs/blogs.module';
+import { PortfoliosModule } from './portfolios/portfolios.module';
+import { GalleriesModule } from './galleries/galleries.module';
+import { ReviewsModule } from './reviews/reviews.module';
+import { ContactModule } from './contact/contact.module';
 
 @Module({
   imports: [
+    NoticesModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [
+    NoticesModule,ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
@@ -63,6 +71,11 @@ import { OverviewModule } from './overview/overview.module';
     ResourcesModule,
     CertificatesModule,
     OverviewModule,
+    BlogsModule,
+    PortfoliosModule,
+    GalleriesModule,
+    ReviewsModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [AppService],

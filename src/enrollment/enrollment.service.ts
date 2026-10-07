@@ -28,13 +28,13 @@ export class EnrollmentService {
     @InjectRepository(LessonProgress)
     private lessonProgressRepository: Repository<LessonProgress>,
     private dataSource: DataSource,
-  ) {}
+  ) { }
 
   async markLessonCompleted(studentId: string, lessonId: string) {
     let progress = await this.lessonProgressRepository.findOne({
       where: { student_id: studentId, lesson_id: lessonId },
     });
-    
+
     if (!progress) {
       progress = this.lessonProgressRepository.create({
         student_id: studentId,
@@ -44,7 +44,7 @@ export class EnrollmentService {
     } else {
       progress.is_completed = true;
     }
-    
+
     return await this.lessonProgressRepository.save(progress);
   }
 
@@ -281,8 +281,8 @@ export class EnrollmentService {
 
     const [items, total] = await this.enrollmentRepository.findAndCount({
       where,
-      relations: { 
-        student: true, 
+      relations: {
+        student: true,
         batch: {
           course: {
             category: true,
@@ -291,9 +291,8 @@ export class EnrollmentService {
               lessons: true,
             }
           }
-        }, 
+        },
         installments: true,
-        lesson_progress: true
       },
       skip,
       take: limit,
@@ -366,14 +365,14 @@ export class EnrollmentService {
       where: { student_id: studentId },
       relations: {
         student: true,
-        batch: { 
+        batch: {
           course: {
             category: true,
             mentors: true,
             modules: {
               lessons: true,
             }
-          } 
+          }
         },
         installments: { payments: true },
         payments: true,
@@ -437,12 +436,12 @@ export class EnrollmentService {
       if (student && (student as any).id) {
         return (student as any).id;
       }
-      
+
       // Auto-create Student if it doesn't exist
       const user = await this.dataSource.manager.findOne('User', {
         where: { id: userId }
       });
-      
+
       if (user) {
         const newStudent = this.dataSource.manager.create('Student', {
           user: user,

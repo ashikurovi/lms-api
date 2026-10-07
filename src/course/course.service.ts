@@ -72,7 +72,7 @@ export class CourseService {
 
     const [items, total] = await this.courseRepository.findAndCount({
       where,
-      relations: { category: true, mentors: true, batches: true },
+      relations: { category: true },
       skip,
       take: limit,
       order: { created_at: 'DESC' },
