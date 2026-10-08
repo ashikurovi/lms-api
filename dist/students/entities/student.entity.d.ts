@@ -1,0 +1,36 @@
+import { User } from '../../users/entities/user.entity';
+export declare class Student {
+    id: string;
+    user: User;
+    name: string;
+    email: string;
+    phone: string;
+    dateOfBirth: Date;
+    gender: string;
+    profileImage: string;
+    institute: string;
+    department: string;
+    technology: string;
+    semester: number;
+    shift: string;
+    session: string;
+    roll: string;
+    registrationNumber: string;
+    presentAddress: string;
+    permanentAddress: string;
+    district: string;
+    division: string;
+    skills: string[];
+    interestedField: string[];
+    github: string;
+    linkedin: string;
+    portfolio: string;
+    industrialAttachment: boolean;
+    attachmentCompany: string;
+    attachmentStatus: string;
+    role: string;
+    isVerified: boolean;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}

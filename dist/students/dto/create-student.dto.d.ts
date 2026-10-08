@@ -1,0 +1,32 @@
+export declare class CreateStudentDto {
+    userId?: string;
+    name: string;
+    email: string;
+    phone?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    profileImage?: string;
+    institute?: string;
+    department?: string;
+    technology?: string;
+    semester?: number;
+    shift?: string;
+    session?: string;
+    roll?: string;
+    registrationNumber?: string;
+    presentAddress?: string;
+    permanentAddress?: string;
+    district?: string;
+    division?: string;
+    skills?: string[];
+    interestedField?: string[];
+    github?: string;
+    linkedin?: string;
+    portfolio?: string;
+    industrialAttachment?: boolean;
+    attachmentCompany?: string;
+    attachmentStatus?: string;
+    role?: string;
+    isVerified?: boolean;
+    isActive?: boolean;
+}
