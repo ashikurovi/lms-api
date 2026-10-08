@@ -16,7 +16,7 @@ import {
 import { Installment, InstallmentStatus } from '../installment/entities/installment.entity';
 import { Enrollment, EnrollmentStatus } from '../enrollment/entities/enrollment.entity';
 import { SslcommerzService } from './sslcommerz.service';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class PaymentsService {
@@ -71,7 +71,7 @@ export class PaymentsService {
     }
 
     // Generate unique transaction ID
-    const transactionId = `TXN-${Date.now()}-${uuidv4().slice(0, 8)}`;
+    const transactionId = `TXN-${Date.now()}-${randomUUID().slice(0, 8)}`;
 
     // Determine environment
     const environment = this.sslcommerzService.getEnvironment();

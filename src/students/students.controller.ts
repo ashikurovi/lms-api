@@ -10,7 +10,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 @Controller('students')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -21,9 +21,9 @@ export class StudentsController {
   @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
   @UseInterceptors(FileInterceptor('profileImage', {
     storage: diskStorage({
-      destination: './uploads',
+      destination: process.env.NODE_ENV === 'production' ? '/tmp' : './uploads',
       filename: (req, file, cb) => {
-        const uniqueSuffix = uuidv4();
+        const uniqueSuffix = randomUUID();
         const ext = extname(file.originalname);
         cb(null, `${uniqueSuffix}${ext}`);
       },
@@ -93,9 +93,9 @@ export class StudentsController {
   @Roles(UserRole.STUDENT, UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
   @UseInterceptors(FileInterceptor('profileImage', {
     storage: diskStorage({
-      destination: './uploads',
+      destination: process.env.NODE_ENV === 'production' ? '/tmp' : './uploads',
       filename: (req, file, cb) => {
-        const uniqueSuffix = uuidv4();
+        const uniqueSuffix = randomUUID();
         const ext = extname(file.originalname);
         cb(null, `${uniqueSuffix}${ext}`);
       },
@@ -123,9 +123,9 @@ export class StudentsController {
   @Roles(UserRole.ADMIN, UserRole.MODERATOR, UserRole.DEVELOPER)
   @UseInterceptors(FileInterceptor('profileImage', {
     storage: diskStorage({
-      destination: './uploads',
+      destination: process.env.NODE_ENV === 'production' ? '/tmp' : './uploads',
       filename: (req, file, cb) => {
-        const uniqueSuffix = uuidv4();
+        const uniqueSuffix = randomUUID();
         const ext = extname(file.originalname);
         cb(null, `${uniqueSuffix}${ext}`);
       },
