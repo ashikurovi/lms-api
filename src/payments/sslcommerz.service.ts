@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+
 
 export interface SslcommerzInitResponse {
   status: string;
@@ -36,7 +35,6 @@ export class SslcommerzService {
 
   constructor(
     private configService: ConfigService,
-    private httpService: HttpService,
   ) {
     this.storeId =
       this.configService.get<string>('SSLCOMMERZ_STORE_ID') || 'creat6ab386e0a62ad';
@@ -90,19 +88,19 @@ export class SslcommerzService {
     });
 
     try {
-      const response = await firstValueFrom(
-        this.httpService.post(
-          `${this.baseUrl}/gwprocess/v4/api.php`,
-          formData.toString(),
-          {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-          },
-        ),
-      );
+      const response = await fetch(`${this.baseUrl}/gwprocess/v4/api.php`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData.toString(),
+      });
 
-      return response.data;
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return (await response.json()) as SslcommerzInitResponse;
     } catch (error) {
       this.logger.error('SSLCOMMERZ init session failed', error);
       throw error;
@@ -113,19 +111,21 @@ export class SslcommerzService {
     valId: string,
   ): Promise<SslcommerzValidationResponse> {
     try {
-      const url = `${this.baseUrl}/validator/api/validationserverAPI.php`;
-      const response = await firstValueFrom(
-        this.httpService.get(url, {
-          params: {
-            val_id: valId,
-            store_id: this.storeId,
-            store_passwd: this.storePassword,
-            format: 'json',
-          },
-        }),
-      );
+      const url = new URL(`${this.baseUrl}/validator/api/validationserverAPI.php`);
+      url.searchParams.append('val_id', valId);
+      url.searchParams.append('store_id', this.storeId);
+      url.searchParams.append('store_passwd', this.storePassword);
+      url.searchParams.append('format', 'json');
 
-      return response.data;
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return (await response.json()) as SslcommerzValidationResponse;
     } catch (error) {
       this.logger.error('SSLCOMMERZ validation failed', error);
       throw error;
