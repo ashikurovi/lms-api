@@ -1,3 +1,4 @@
+import 'pg'; // Force Vercel to bundle pg if it builds main.ts
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
@@ -31,3 +32,7 @@ async function bootstrap() {
   console.log(`Application is running on: http://localhost:${port}`);
 }
 bootstrap();
+
+export default function handler(req: any, res: any) {
+  res.status(200).send('API is running. (src/main.js fallback handler)');
+}
