@@ -14,7 +14,7 @@ export class UploadsController {
   @Public() // Make public so anyone can upload, or remove to protect it
   @UseInterceptors(FileInterceptor('file', {
     storage: diskStorage({
-      destination: './uploads',
+      destination: process.env.NODE_ENV === 'production' ? '/tmp' : './uploads',
       filename: (req, file, cb) => {
         const uniqueSuffix = randomUUID();
         const ext = extname(file.originalname);
