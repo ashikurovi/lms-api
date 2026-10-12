@@ -1,34 +1,65 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpStatus } from '@nestjs/common';
 import { BlogsService } from './blogs.service';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
+import { Public } from '../auth/decorators/public.decorator';
 
 @Controller('blogs')
 export class BlogsController {
   constructor(private readonly blogsService: BlogsService) {}
 
+  @Public()
   @Post()
-  create(@Body() createBlogDto: CreateBlogDto) {
-    return this.blogsService.create(createBlogDto);
+  async create(@Body() createBlogDto: CreateBlogDto) {
+    const data = await this.blogsService.create(createBlogDto);
+    return {
+      statusCode: HttpStatus.CREATED,
+      message: 'Blog created successfully',
+      data,
+    };
   }
 
+  @Public()
   @Get()
-  findAll() {
-    return this.blogsService.findAll();
+  async findAll() {
+    const data = await this.blogsService.findAll();
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Blogs retrieved successfully',
+      data,
+    };
   }
 
+  @Public()
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.blogsService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const data = await this.blogsService.findOne(id);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Blog retrieved successfully',
+      data,
+    };
   }
 
+  @Public()
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateBlogDto: UpdateBlogDto) {
-    return this.blogsService.update(id, updateBlogDto);
+  async update(@Param('id') id: string, @Body() updateBlogDto: UpdateBlogDto) {
+    const data = await this.blogsService.update(id, updateBlogDto);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Blog updated successfully',
+      data,
+    };
   }
 
+  @Public()
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.blogsService.remove(id);
+  async remove(@Param('id') id: string) {
+    const data = await this.blogsService.remove(id);
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Blog deleted successfully',
+      data,
+    };
   }
 }

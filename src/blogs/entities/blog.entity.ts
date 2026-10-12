@@ -15,13 +15,20 @@ export class Blog {
   @Column()
   title: string;
 
+  @Column({ nullable: true })
+  category: string;
+
+  @Column({ nullable: true })
+  seoTitle: string;
+
+  @Column({ type: 'text', nullable: true })
+  seoDescription: string;
+
   @Column({ type: 'text' })
   content: string;
 
   @Column({ nullable: true })
   image: string;
-
-
 
   @CreateDateColumn()
   createdAt: Date;
