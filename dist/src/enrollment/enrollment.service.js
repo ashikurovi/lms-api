@@ -112,7 +112,7 @@ let EnrollmentService = class EnrollmentService {
         });
     }
     async createManual(dto) {
-        const { student_id, batch_id, discount_amount = 0, paid_amount, transaction_id, } = dto;
+        const { student_id, batch_id, discount_amount = 0, paid_amount, transaction_id, payment_method, } = dto;
         const batch = await this.dataSource.manager.findOne(batch_entity_1.Batch, {
             where: { id: batch_id },
             relations: { course: true },
@@ -162,13 +162,16 @@ let EnrollmentService = class EnrollmentService {
                 status: installment_entity_1.InstallmentStatus.PAID,
             });
             const savedInstallment = await manager.save(installment_entity_1.Installment, installment);
+            const finalTrxId = transaction_id
+                ? (payment_method ? `${payment_method} - ${transaction_id}` : transaction_id)
+                : `${payment_method || 'MANUAL'}-${Date.now()}`;
             const payment = manager.create(payment_entity_1.Payment, {
                 enrollment_id: savedEnrollment.id,
                 installment_id: savedInstallment.id,
                 amount: paid_amount,
                 gateway: payment_entity_1.PaymentGateway.MANUAL,
                 environment: payment_entity_1.PaymentEnvironment.LIVE,
-                transaction_id: transaction_id || `MANUAL-${Date.now()}`,
+                transaction_id: finalTrxId,
                 status: payment_entity_1.PaymentStatus.SUCCESS,
                 paid_at: new Date(),
             });
@@ -218,7 +221,9 @@ let EnrollmentService = class EnrollmentService {
                         }
                     }
                 },
-                installments: true,
+                installments: {
+                    payments: true,
+                },
             },
             skip,
             take: limit,

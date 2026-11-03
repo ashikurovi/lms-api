@@ -159,6 +159,7 @@ export class EnrollmentService {
       discount_amount = 0,
       paid_amount,
       transaction_id,
+      payment_method,
     } = dto;
 
     const batch = await this.dataSource.manager.findOne(Batch, {
@@ -223,13 +224,17 @@ export class EnrollmentService {
       const savedInstallment = await manager.save(Installment, installment);
 
       // 3. Create Payment Record
+      const finalTrxId = transaction_id
+        ? (payment_method ? `${payment_method} - ${transaction_id}` : transaction_id)
+        : `${payment_method || 'MANUAL'}-${Date.now()}`;
+
       const payment = manager.create(Payment, {
         enrollment_id: savedEnrollment.id,
         installment_id: savedInstallment.id,
         amount: paid_amount,
         gateway: PaymentGateway.MANUAL,
         environment: PaymentEnvironment.LIVE,
-        transaction_id: transaction_id || `MANUAL-${Date.now()}`,
+        transaction_id: finalTrxId,
         status: PaymentStatus.SUCCESS,
         paid_at: new Date(),
       });
@@ -292,7 +297,9 @@ export class EnrollmentService {
             }
           }
         },
-        installments: true,
+        installments: {
+          payments: true,
+        },
       },
       skip,
       take: limit,

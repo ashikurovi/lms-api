@@ -38,4 +38,8 @@ export class CreateManualEnrollmentDto {
   @IsOptional()
   @IsString()
   transaction_id?: string;
+
+  @IsOptional()
+  @IsString()
+  payment_method?: string;
 }

@@ -5,4 +5,5 @@ export declare class CreateManualEnrollmentDto {
     discount_amount?: number;
     paid_amount: number;
     transaction_id?: string;
+    payment_method?: string;
 }

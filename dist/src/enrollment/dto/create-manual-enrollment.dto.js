@@ -51,4 +51,9 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateManualEnrollmentDto.prototype, "transaction_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateManualEnrollmentDto.prototype, "payment_method", void 0);
 //# sourceMappingURL=create-manual-enrollment.dto.js.map
