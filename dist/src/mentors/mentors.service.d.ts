@@ -14,7 +14,18 @@ export declare class MentorsService {
         totalPages: number;
     }>;
     findOne(id: string): Promise<Mentor>;
-    update(id: string, updateMentorDto: UpdateMentorDto): Promise<Mentor & UpdateMentorDto>;
+    update(id: string, updateMentorDto: UpdateMentorDto): Promise<Mentor & {
+        userId?: string;
+        profileImage?: string;
+        bio?: string;
+        designation?: string;
+        expertise?: string[];
+        subject?: string;
+        skills?: string[];
+        experience?: string;
+        facebook?: string;
+        linkedin?: string;
+    }>;
     remove(id: string): Promise<Mentor>;
     ban(id: string): Promise<Mentor>;
     unban(id: string): Promise<Mentor>;

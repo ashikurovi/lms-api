@@ -55,7 +55,24 @@ export class MentorsService {
 
   async update(id: string, updateMentorDto: UpdateMentorDto) {
     const mentor = await this.findOne(id);
-    const updatedMentor = Object.assign(mentor, updateMentorDto);
+    const { name, phone, ...rest } = updateMentorDto;
+
+    if (mentor.user) {
+      let userChanged = false;
+      if (name !== undefined && name.trim()) {
+        mentor.user.name = name.trim();
+        userChanged = true;
+      }
+      if (phone !== undefined) {
+        mentor.user.phone = phone.trim();
+        userChanged = true;
+      }
+      if (userChanged) {
+        await this.mentorRepository.manager.save(mentor.user);
+      }
+    }
+
+    const updatedMentor = Object.assign(mentor, rest);
     return await this.mentorRepository.save(updatedMentor);
   }
 

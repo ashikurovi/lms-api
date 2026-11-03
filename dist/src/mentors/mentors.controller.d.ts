@@ -29,7 +29,18 @@ export declare class MentorsController {
     update(id: string, updateMentorDto: UpdateMentorDto): Promise<{
         statusCode: HttpStatus;
         message: string;
-        data: import("./entities/mentor.entity").Mentor & UpdateMentorDto;
+        data: import("./entities/mentor.entity").Mentor & {
+            userId?: string;
+            profileImage?: string;
+            bio?: string;
+            designation?: string;
+            expertise?: string[];
+            subject?: string;
+            skills?: string[];
+            experience?: string;
+            facebook?: string;
+            linkedin?: string;
+        };
     }>;
     ban(id: string): Promise<{
         statusCode: HttpStatus;
