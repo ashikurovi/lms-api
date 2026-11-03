@@ -32,11 +32,11 @@ __decorate([
     __metadata("design:type", batch_entity_1.Batch)
 ], Assignment.prototype, "batch", void 0);
 __decorate([
-    (0, typeorm_1.Column)(),
+    (0, typeorm_1.Column)({ nullable: true }),
     __metadata("design:type", String)
 ], Assignment.prototype, "mentorId", void 0);
 __decorate([
-    (0, typeorm_1.ManyToOne)(() => mentor_entity_1.Mentor),
+    (0, typeorm_1.ManyToOne)(() => mentor_entity_1.Mentor, { onDelete: 'SET NULL', nullable: true }),
     (0, typeorm_1.JoinColumn)({ name: 'mentorId' }),
     __metadata("design:type", mentor_entity_1.Mentor)
 ], Assignment.prototype, "mentor", void 0);

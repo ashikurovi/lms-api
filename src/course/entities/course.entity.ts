@@ -109,7 +109,7 @@ export class Course {
   })
   visibility: CourseVisibility;
 
-  @ManyToMany(() => Mentor, { eager: false })
+  @ManyToMany(() => Mentor, { eager: false, onDelete: 'CASCADE' })
   @JoinTable({
     name: 'course_mentors',
     joinColumn: { name: 'course_id', referencedColumnName: 'id' },

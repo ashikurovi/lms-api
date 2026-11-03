@@ -38,6 +38,7 @@ const portfolios_module_1 = require("./portfolios/portfolios.module");
 const galleries_module_1 = require("./galleries/galleries.module");
 const reviews_module_1 = require("./reviews/reviews.module");
 const contact_module_1 = require("./contact/contact.module");
+const walkthroughs_module_1 = require("./walkthroughs/walkthroughs.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -88,6 +89,7 @@ exports.AppModule = AppModule = __decorate([
             galleries_module_1.GalleriesModule,
             reviews_module_1.ReviewsModule,
             contact_module_1.ContactModule,
+            walkthroughs_module_1.WalkthroughsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [app_service_1.AppService],

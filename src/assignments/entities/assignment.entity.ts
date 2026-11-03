@@ -24,12 +24,12 @@ export class Assignment {
   @JoinColumn({ name: 'batchId' })
   batch: Batch;
 
-  @Column()
-  mentorId: string;
+  @Column({ nullable: true })
+  mentorId?: string;
 
-  @ManyToOne(() => Mentor)
+  @ManyToOne(() => Mentor, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'mentorId' })
-  mentor: Mentor;
+  mentor?: Mentor;
 
   @Column()
   title: string;

@@ -30,6 +30,7 @@ import { PortfoliosModule } from './portfolios/portfolios.module';
 import { GalleriesModule } from './galleries/galleries.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { ContactModule } from './contact/contact.module';
+import { WalkthroughsModule } from './walkthroughs/walkthroughs.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { ContactModule } from './contact/contact.module';
     GalleriesModule,
     ReviewsModule,
     ContactModule,
+    WalkthroughsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

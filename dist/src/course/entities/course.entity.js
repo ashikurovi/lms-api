@@ -125,7 +125,7 @@ __decorate([
     __metadata("design:type", String)
 ], Course.prototype, "visibility", void 0);
 __decorate([
-    (0, typeorm_1.ManyToMany)(() => mentor_entity_1.Mentor, { eager: false }),
+    (0, typeorm_1.ManyToMany)(() => mentor_entity_1.Mentor, { eager: false, onDelete: 'CASCADE' }),
     (0, typeorm_1.JoinTable)({
         name: 'course_mentors',
         joinColumn: { name: 'course_id', referencedColumnName: 'id' },

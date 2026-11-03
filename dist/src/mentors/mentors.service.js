@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
 const mentor_entity_1 = require("./entities/mentor.entity");
+const user_entity_1 = require("../users/entities/user.entity");
 let MentorsService = class MentorsService {
     constructor(mentorRepository) {
         this.mentorRepository = mentorRepository;
@@ -62,7 +63,45 @@ let MentorsService = class MentorsService {
     }
     async remove(id) {
         const mentor = await this.findOne(id);
-        return await this.mentorRepository.remove(mentor);
+        try {
+            await this.mentorRepository.query(`DELETE FROM "course_mentors" WHERE "mentor_id" = $1`, [id]);
+        }
+        catch (err) {
+            console.warn('Error clearing course_mentors:', err);
+        }
+        try {
+            await this.mentorRepository.query(`ALTER TABLE "assignments" ALTER COLUMN "mentorId" DROP NOT NULL`);
+        }
+        catch { }
+        try {
+            await this.mentorRepository.query(`UPDATE "assignments" SET "mentorId" = NULL WHERE "mentorId" = $1`, [id]);
+        }
+        catch (err) {
+            console.warn('Error clearing assignments mentorId:', err);
+        }
+        if (mentor.user?.id) {
+            try {
+                await this.mentorRepository.query(`UPDATE "live_schedules" SET "mentorId" = NULL WHERE "mentorId" = $1`, [mentor.user.id]);
+            }
+            catch { }
+            try {
+                await this.mentorRepository.query(`UPDATE "resources" SET "mentorId" = NULL WHERE "mentorId" = $1`, [mentor.user.id]);
+            }
+            catch { }
+        }
+        const result = await this.mentorRepository.remove(mentor);
+        if (mentor.user) {
+            try {
+                if (mentor.user.role === user_entity_1.UserRole.MENTOR) {
+                    mentor.user.role = user_entity_1.UserRole.STUDENT;
+                    await this.mentorRepository.manager.save(mentor.user);
+                }
+            }
+            catch (err) {
+                console.warn('Error updating user role:', err);
+            }
+        }
+        return result;
     }
     async ban(id) {
         const mentor = await this.findOne(id);

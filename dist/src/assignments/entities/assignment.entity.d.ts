@@ -4,8 +4,8 @@ export declare class Assignment {
     id: string;
     batchId: string;
     batch: Batch;
-    mentorId: string;
-    mentor: Mentor;
+    mentorId?: string;
+    mentor?: Mentor;
     title: string;
     description: string;
     attachmentUrl?: string;

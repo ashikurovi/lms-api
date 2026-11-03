@@ -4,6 +4,7 @@ import { Repository, ILike } from 'typeorm';
 import { CreateMentorDto } from './dto/create-mentor.dto';
 import { UpdateMentorDto } from './dto/update-mentor.dto';
 import { Mentor } from './entities/mentor.entity';
+import { UserRole } from '../users/entities/user.entity';
 
 @Injectable()
 export class MentorsService {
@@ -60,7 +61,66 @@ export class MentorsService {
 
   async remove(id: string) {
     const mentor = await this.findOne(id);
-    return await this.mentorRepository.remove(mentor);
+
+    // 1. Remove references from course_mentors join table
+    try {
+      await this.mentorRepository.query(
+        `DELETE FROM "course_mentors" WHERE "mentor_id" = $1`,
+        [id],
+      );
+    } catch (err) {
+      console.warn('Error clearing course_mentors:', err);
+    }
+
+    // 2. Clear mentorId from assignments
+    try {
+      await this.mentorRepository.query(
+        `ALTER TABLE "assignments" ALTER COLUMN "mentorId" DROP NOT NULL`,
+      );
+    } catch {}
+
+    try {
+      await this.mentorRepository.query(
+        `UPDATE "assignments" SET "mentorId" = NULL WHERE "mentorId" = $1`,
+        [id],
+      );
+    } catch (err) {
+      console.warn('Error clearing assignments mentorId:', err);
+    }
+
+    // 3. Clear mentorId from live_schedules & resources if linked to user
+    if (mentor.user?.id) {
+      try {
+        await this.mentorRepository.query(
+          `UPDATE "live_schedules" SET "mentorId" = NULL WHERE "mentorId" = $1`,
+          [mentor.user.id],
+        );
+      } catch {}
+
+      try {
+        await this.mentorRepository.query(
+          `UPDATE "resources" SET "mentorId" = NULL WHERE "mentorId" = $1`,
+          [mentor.user.id],
+        );
+      } catch {}
+    }
+
+    // 4. Remove the mentor record
+    const result = await this.mentorRepository.remove(mentor);
+
+    // 5. Update associated user role to student so they no longer hold trainer privileges
+    if (mentor.user) {
+      try {
+        if (mentor.user.role === UserRole.MENTOR) {
+          mentor.user.role = UserRole.STUDENT;
+          await this.mentorRepository.manager.save(mentor.user);
+        }
+      } catch (err) {
+        console.warn('Error updating user role:', err);
+      }
+    }
+
+    return result;
   }
 
   async ban(id: string) {
