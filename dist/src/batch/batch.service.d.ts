@@ -5,6 +5,7 @@ import { Batch, BatchStatus } from './entities/batch.entity';
 export declare class BatchService {
     private batchRepository;
     constructor(batchRepository: Repository<Batch>);
+    private generateUniqueCode;
     create(createBatchDto: CreateBatchDto): Promise<Batch>;
     launch(createBatchDto: CreateBatchDto): Promise<Batch>;
     findAll(pageStr?: string, limitStr?: string, search?: string, courseId?: string, status?: string, mode?: string, mentorId?: string): Promise<{
@@ -20,9 +21,9 @@ export declare class BatchService {
         registration_start: Date;
         end_date: Date;
         start_date: Date;
+        code: string;
         course_id?: string;
         name?: string;
-        code?: string;
         capacity?: number;
         status?: BatchStatus;
         mode?: import("./entities/batch.entity").BatchMode;

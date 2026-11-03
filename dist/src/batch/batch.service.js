@@ -21,10 +21,32 @@ let BatchService = class BatchService {
     constructor(batchRepository) {
         this.batchRepository = batchRepository;
     }
+    async generateUniqueCode(baseCode, excludeId) {
+        const cleanBase = (baseCode || 'BATCH')
+            .trim()
+            .toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '') || 'BATCH';
+        let candidate = cleanBase;
+        let counter = 1;
+        while (true) {
+            const existing = await this.batchRepository.findOne({
+                where: { code: candidate },
+                select: { id: true, code: true },
+            });
+            if (!existing || (excludeId && existing.id === excludeId)) {
+                return candidate;
+            }
+            candidate = `${cleanBase}-${counter}`;
+            counter++;
+        }
+    }
     async create(createBatchDto) {
         const { start_date, end_date, registration_start, registration_end, ...rest } = createBatchDto;
+        const uniqueCode = await this.generateUniqueCode(createBatchDto.code || createBatchDto.name || 'BATCH');
         const batchData = {
             ...rest,
+            code: uniqueCode,
             start_date: new Date(start_date),
             end_date: new Date(end_date),
             registration_start: registration_start
@@ -35,12 +57,26 @@ let BatchService = class BatchService {
                 : undefined,
         };
         const batch = this.batchRepository.create(batchData);
-        return await this.batchRepository.save(batch);
+        try {
+            return await this.batchRepository.save(batch);
+        }
+        catch (err) {
+            if (err?.code === '23505' ||
+                err?.detail?.includes('code') ||
+                err?.message?.toLowerCase().includes('code') ||
+                err?.message?.toLowerCase().includes('unique')) {
+                batch.code = `${uniqueCode}-${Date.now().toString().slice(-4)}`;
+                return await this.batchRepository.save(batch);
+            }
+            throw err;
+        }
     }
     async launch(createBatchDto) {
         const { start_date, end_date, registration_start, registration_end, ...rest } = createBatchDto;
+        const uniqueCode = await this.generateUniqueCode(createBatchDto.code || createBatchDto.name || 'BATCH');
         const batchData = {
             ...rest,
+            code: uniqueCode,
             start_date: new Date(start_date),
             end_date: new Date(end_date),
             registration_start: registration_start
@@ -62,7 +98,19 @@ let BatchService = class BatchService {
                 .execute();
         }
         const batch = this.batchRepository.create(batchData);
-        return await this.batchRepository.save(batch);
+        try {
+            return await this.batchRepository.save(batch);
+        }
+        catch (err) {
+            if (err?.code === '23505' ||
+                err?.detail?.includes('code') ||
+                err?.message?.toLowerCase().includes('code') ||
+                err?.message?.toLowerCase().includes('unique')) {
+                batch.code = `${uniqueCode}-${Date.now().toString().slice(-4)}`;
+                return await this.batchRepository.save(batch);
+            }
+            throw err;
+        }
     }
     async findAll(pageStr, limitStr, search, courseId, status, mode, mentorId) {
         const page = parseInt(pageStr ?? '1', 10) || 1;
@@ -135,8 +183,13 @@ let BatchService = class BatchService {
     }
     async update(id, updateBatchDto) {
         const batch = await this.findOne(id);
+        let updatedCode = batch.code;
+        if (updateBatchDto.code && updateBatchDto.code !== batch.code) {
+            updatedCode = await this.generateUniqueCode(updateBatchDto.code, batch.id);
+        }
         const updatedBatch = Object.assign(batch, {
             ...updateBatchDto,
+            code: updatedCode,
             ...(updateBatchDto.start_date && {
                 start_date: new Date(updateBatchDto.start_date),
             }),
@@ -157,7 +210,19 @@ let BatchService = class BatchService {
         if (updateBatchDto.course_id) {
             updatedBatch.course = { id: updateBatchDto.course_id };
         }
-        return await this.batchRepository.save(updatedBatch);
+        try {
+            return await this.batchRepository.save(updatedBatch);
+        }
+        catch (err) {
+            if (err?.code === '23505' ||
+                err?.detail?.includes('code') ||
+                err?.message?.toLowerCase().includes('code') ||
+                err?.message?.toLowerCase().includes('unique')) {
+                updatedBatch.code = `${updatedCode}-${Date.now().toString().slice(-4)}`;
+                return await this.batchRepository.save(updatedBatch);
+            }
+            throw err;
+        }
     }
     async remove(id) {
         const batch = await this.findOne(id);

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, DeepPartial } from 'typeorm';
 import { CreateBatchDto } from './dto/create-batch.dto';
@@ -12,6 +12,31 @@ export class BatchService {
     private batchRepository: Repository<Batch>,
   ) {}
 
+  private async generateUniqueCode(baseCode: string, excludeId?: string): Promise<string> {
+    const cleanBase = (baseCode || 'BATCH')
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '') || 'BATCH';
+
+    let candidate = cleanBase;
+    let counter = 1;
+
+    while (true) {
+      const existing = await this.batchRepository.findOne({
+        where: { code: candidate },
+        select: { id: true, code: true },
+      });
+
+      if (!existing || (excludeId && existing.id === excludeId)) {
+        return candidate;
+      }
+
+      candidate = `${cleanBase}-${counter}`;
+      counter++;
+    }
+  }
+
   async create(createBatchDto: CreateBatchDto) {
     const {
       start_date,
@@ -21,8 +46,11 @@ export class BatchService {
       ...rest
     } = createBatchDto;
 
+    const uniqueCode = await this.generateUniqueCode(createBatchDto.code || createBatchDto.name || 'BATCH');
+
     const batchData: DeepPartial<Batch> = {
       ...rest,
+      code: uniqueCode,
       start_date: new Date(start_date),
       end_date: new Date(end_date),
       registration_start: registration_start
@@ -34,7 +62,20 @@ export class BatchService {
     };
 
     const batch = this.batchRepository.create(batchData);
-    return await this.batchRepository.save(batch);
+    try {
+      return await this.batchRepository.save(batch);
+    } catch (err: any) {
+      if (
+        err?.code === '23505' ||
+        err?.detail?.includes('code') ||
+        err?.message?.toLowerCase().includes('code') ||
+        err?.message?.toLowerCase().includes('unique')
+      ) {
+        batch.code = `${uniqueCode}-${Date.now().toString().slice(-4)}`;
+        return await this.batchRepository.save(batch);
+      }
+      throw err;
+    }
   }
 
   async launch(createBatchDto: CreateBatchDto) {
@@ -46,8 +87,11 @@ export class BatchService {
       ...rest
     } = createBatchDto;
 
+    const uniqueCode = await this.generateUniqueCode(createBatchDto.code || createBatchDto.name || 'BATCH');
+
     const batchData: DeepPartial<Batch> = {
       ...rest,
+      code: uniqueCode,
       start_date: new Date(start_date),
       end_date: new Date(end_date),
       registration_start: registration_start
@@ -72,7 +116,20 @@ export class BatchService {
     }
 
     const batch = this.batchRepository.create(batchData);
-    return await this.batchRepository.save(batch);
+    try {
+      return await this.batchRepository.save(batch);
+    } catch (err: any) {
+      if (
+        err?.code === '23505' ||
+        err?.detail?.includes('code') ||
+        err?.message?.toLowerCase().includes('code') ||
+        err?.message?.toLowerCase().includes('unique')
+      ) {
+        batch.code = `${uniqueCode}-${Date.now().toString().slice(-4)}`;
+        return await this.batchRepository.save(batch);
+      }
+      throw err;
+    }
   }
 
   async findAll(
@@ -162,8 +219,14 @@ export class BatchService {
   async update(id: string, updateBatchDto: UpdateBatchDto) {
     const batch = await this.findOne(id);
 
+    let updatedCode = batch.code;
+    if (updateBatchDto.code && updateBatchDto.code !== batch.code) {
+      updatedCode = await this.generateUniqueCode(updateBatchDto.code, batch.id);
+    }
+
     const updatedBatch = Object.assign(batch, {
       ...updateBatchDto,
+      code: updatedCode,
       ...(updateBatchDto.start_date && {
         start_date: new Date(updateBatchDto.start_date),
       }),
@@ -188,7 +251,20 @@ export class BatchService {
       updatedBatch.course = { id: updateBatchDto.course_id } as any;
     }
 
-    return await this.batchRepository.save(updatedBatch);
+    try {
+      return await this.batchRepository.save(updatedBatch);
+    } catch (err: any) {
+      if (
+        err?.code === '23505' ||
+        err?.detail?.includes('code') ||
+        err?.message?.toLowerCase().includes('code') ||
+        err?.message?.toLowerCase().includes('unique')
+      ) {
+        updatedBatch.code = `${updatedCode}-${Date.now().toString().slice(-4)}`;
+        return await this.batchRepository.save(updatedBatch);
+      }
+      throw err;
+    }
   }
 
   async remove(id: string) {

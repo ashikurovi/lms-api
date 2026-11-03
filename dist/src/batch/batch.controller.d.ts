@@ -39,9 +39,9 @@ export declare class BatchController {
             registration_start: Date;
             end_date: Date;
             start_date: Date;
+            code: string;
             course_id?: string;
             name?: string;
-            code?: string;
             capacity?: number;
             status?: import("./entities/batch.entity").BatchStatus;
             mode?: import("./entities/batch.entity").BatchMode;
