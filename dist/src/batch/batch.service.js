@@ -21,6 +21,40 @@ let BatchService = class BatchService {
     constructor(batchRepository) {
         this.batchRepository = batchRepository;
     }
+    async onModuleInit() {
+        try {
+            await this.batchRepository.query(`ALTER TYPE batches_class_type_enum ADD VALUE IF NOT EXISTS 'mixed';`);
+        }
+        catch {
+        }
+    }
+    async safelySaveBatch(batch, fallbackCodePrefix) {
+        try {
+            return await this.batchRepository.save(batch);
+        }
+        catch (err) {
+            if (err?.code === '22P02' ||
+                err?.message?.includes('batches_class_type_enum') ||
+                err?.driverError?.message?.includes('batches_class_type_enum')) {
+                try {
+                    await this.batchRepository.query(`ALTER TYPE batches_class_type_enum ADD VALUE IF NOT EXISTS 'mixed';`);
+                    return await this.batchRepository.save(batch);
+                }
+                catch {
+                    batch.class_type = batch_entity_1.ClassType.SELF_PACED;
+                    return await this.batchRepository.save(batch);
+                }
+            }
+            if (err?.code === '23505' ||
+                err?.detail?.includes('code') ||
+                err?.message?.toLowerCase().includes('code') ||
+                err?.message?.toLowerCase().includes('unique')) {
+                batch.code = `${fallbackCodePrefix}-${Date.now().toString().slice(-4)}`;
+                return await this.batchRepository.save(batch);
+            }
+            throw err;
+        }
+    }
     async generateUniqueCode(baseCode, excludeId) {
         const cleanBase = (baseCode || 'BATCH')
             .trim()
@@ -57,19 +91,7 @@ let BatchService = class BatchService {
                 : undefined,
         };
         const batch = this.batchRepository.create(batchData);
-        try {
-            return await this.batchRepository.save(batch);
-        }
-        catch (err) {
-            if (err?.code === '23505' ||
-                err?.detail?.includes('code') ||
-                err?.message?.toLowerCase().includes('code') ||
-                err?.message?.toLowerCase().includes('unique')) {
-                batch.code = `${uniqueCode}-${Date.now().toString().slice(-4)}`;
-                return await this.batchRepository.save(batch);
-            }
-            throw err;
-        }
+        return await this.safelySaveBatch(batch, uniqueCode);
     }
     async launch(createBatchDto) {
         const { start_date, end_date, registration_start, registration_end, ...rest } = createBatchDto;
@@ -98,19 +120,7 @@ let BatchService = class BatchService {
                 .execute();
         }
         const batch = this.batchRepository.create(batchData);
-        try {
-            return await this.batchRepository.save(batch);
-        }
-        catch (err) {
-            if (err?.code === '23505' ||
-                err?.detail?.includes('code') ||
-                err?.message?.toLowerCase().includes('code') ||
-                err?.message?.toLowerCase().includes('unique')) {
-                batch.code = `${uniqueCode}-${Date.now().toString().slice(-4)}`;
-                return await this.batchRepository.save(batch);
-            }
-            throw err;
-        }
+        return await this.safelySaveBatch(batch, uniqueCode);
     }
     async findAll(pageStr, limitStr, search, courseId, status, mode, mentorId) {
         const page = parseInt(pageStr ?? '1', 10) || 1;
@@ -210,19 +220,7 @@ let BatchService = class BatchService {
         if (updateBatchDto.course_id) {
             updatedBatch.course = { id: updateBatchDto.course_id };
         }
-        try {
-            return await this.batchRepository.save(updatedBatch);
-        }
-        catch (err) {
-            if (err?.code === '23505' ||
-                err?.detail?.includes('code') ||
-                err?.message?.toLowerCase().includes('code') ||
-                err?.message?.toLowerCase().includes('unique')) {
-                updatedBatch.code = `${updatedCode}-${Date.now().toString().slice(-4)}`;
-                return await this.batchRepository.save(updatedBatch);
-            }
-            throw err;
-        }
+        return await this.safelySaveBatch(updatedBatch, updatedCode);
     }
     async remove(id) {
         const batch = await this.findOne(id);

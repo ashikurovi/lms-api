@@ -28,6 +28,7 @@ export enum ClassType {
   LIVE = 'live',
   RECORDED = 'recorded',
   SELF_PACED = 'self_paced',
+  MIXED = 'mixed',
 }
 
 @Entity('batches')

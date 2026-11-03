@@ -31,6 +31,7 @@ var ClassType;
     ClassType["LIVE"] = "live";
     ClassType["RECORDED"] = "recorded";
     ClassType["SELF_PACED"] = "self_paced";
+    ClassType["MIXED"] = "mixed";
 })(ClassType || (exports.ClassType = ClassType = {}));
 let Batch = class Batch {
 };

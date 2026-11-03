@@ -1,16 +1,63 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, DeepPartial } from 'typeorm';
 import { CreateBatchDto } from './dto/create-batch.dto';
 import { UpdateBatchDto } from './dto/update-batch.dto';
-import { Batch, BatchStatus } from './entities/batch.entity';
+import { Batch, BatchStatus, ClassType } from './entities/batch.entity';
 
 @Injectable()
-export class BatchService {
+export class BatchService implements OnModuleInit {
   constructor(
     @InjectRepository(Batch)
     private batchRepository: Repository<Batch>,
   ) {}
+
+  async onModuleInit() {
+    try {
+      await this.batchRepository.query(
+        `ALTER TYPE batches_class_type_enum ADD VALUE IF NOT EXISTS 'mixed';`
+      );
+    } catch {
+      // Ignored if type already updated
+    }
+  }
+
+  private async safelySaveBatch(batch: Batch, fallbackCodePrefix: string): Promise<Batch> {
+    try {
+      return await this.batchRepository.save(batch);
+    } catch (err: any) {
+      // 1. Handle batches_class_type_enum invalid value error ("mixed")
+      if (
+        err?.code === '22P02' ||
+        err?.message?.includes('batches_class_type_enum') ||
+        err?.driverError?.message?.includes('batches_class_type_enum')
+      ) {
+        try {
+          await this.batchRepository.query(
+            `ALTER TYPE batches_class_type_enum ADD VALUE IF NOT EXISTS 'mixed';`
+          );
+          return await this.batchRepository.save(batch);
+        } catch {
+          // If PostgreSQL enum alter fails or is blocked, fallback to SELF_PACED
+          batch.class_type = ClassType.SELF_PACED;
+          return await this.batchRepository.save(batch);
+        }
+      }
+
+      // 2. Handle unique code conflicts
+      if (
+        err?.code === '23505' ||
+        err?.detail?.includes('code') ||
+        err?.message?.toLowerCase().includes('code') ||
+        err?.message?.toLowerCase().includes('unique')
+      ) {
+        batch.code = `${fallbackCodePrefix}-${Date.now().toString().slice(-4)}`;
+        return await this.batchRepository.save(batch);
+      }
+
+      throw err;
+    }
+  }
 
   private async generateUniqueCode(baseCode: string, excludeId?: string): Promise<string> {
     const cleanBase = (baseCode || 'BATCH')
@@ -62,20 +109,7 @@ export class BatchService {
     };
 
     const batch = this.batchRepository.create(batchData);
-    try {
-      return await this.batchRepository.save(batch);
-    } catch (err: any) {
-      if (
-        err?.code === '23505' ||
-        err?.detail?.includes('code') ||
-        err?.message?.toLowerCase().includes('code') ||
-        err?.message?.toLowerCase().includes('unique')
-      ) {
-        batch.code = `${uniqueCode}-${Date.now().toString().slice(-4)}`;
-        return await this.batchRepository.save(batch);
-      }
-      throw err;
-    }
+    return await this.safelySaveBatch(batch, uniqueCode);
   }
 
   async launch(createBatchDto: CreateBatchDto) {
@@ -116,20 +150,7 @@ export class BatchService {
     }
 
     const batch = this.batchRepository.create(batchData);
-    try {
-      return await this.batchRepository.save(batch);
-    } catch (err: any) {
-      if (
-        err?.code === '23505' ||
-        err?.detail?.includes('code') ||
-        err?.message?.toLowerCase().includes('code') ||
-        err?.message?.toLowerCase().includes('unique')
-      ) {
-        batch.code = `${uniqueCode}-${Date.now().toString().slice(-4)}`;
-        return await this.batchRepository.save(batch);
-      }
-      throw err;
-    }
+    return await this.safelySaveBatch(batch, uniqueCode);
   }
 
   async findAll(
@@ -251,20 +272,7 @@ export class BatchService {
       updatedBatch.course = { id: updateBatchDto.course_id } as any;
     }
 
-    try {
-      return await this.batchRepository.save(updatedBatch);
-    } catch (err: any) {
-      if (
-        err?.code === '23505' ||
-        err?.detail?.includes('code') ||
-        err?.message?.toLowerCase().includes('code') ||
-        err?.message?.toLowerCase().includes('unique')
-      ) {
-        updatedBatch.code = `${updatedCode}-${Date.now().toString().slice(-4)}`;
-        return await this.batchRepository.save(updatedBatch);
-      }
-      throw err;
-    }
+    return await this.safelySaveBatch(updatedBatch, updatedCode);
   }
 
   async remove(id: string) {

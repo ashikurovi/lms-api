@@ -34,23 +34,7 @@ export declare class BatchController {
     update(id: string, updateBatchDto: UpdateBatchDto): Promise<{
         statusCode: HttpStatus;
         message: string;
-        data: import("./entities/batch.entity").Batch & {
-            registration_end: Date;
-            registration_start: Date;
-            end_date: Date;
-            start_date: Date;
-            code: string;
-            course_id?: string;
-            name?: string;
-            capacity?: number;
-            status?: import("./entities/batch.entity").BatchStatus;
-            mode?: import("./entities/batch.entity").BatchMode;
-            class_type?: import("./entities/batch.entity").ClassType;
-            timezone?: string;
-            price?: number;
-            discount_price?: number;
-            fb_group_link?: string;
-        };
+        data: import("./entities/batch.entity").Batch;
     }>;
     remove(id: string): Promise<{
         statusCode: HttpStatus;

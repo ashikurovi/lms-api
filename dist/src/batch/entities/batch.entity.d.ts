@@ -14,7 +14,8 @@ export declare enum BatchMode {
 export declare enum ClassType {
     LIVE = "live",
     RECORDED = "recorded",
-    SELF_PACED = "self_paced"
+    SELF_PACED = "self_paced",
+    MIXED = "mixed"
 }
 export declare class Batch {
     id: string;
