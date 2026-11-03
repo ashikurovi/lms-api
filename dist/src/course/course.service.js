@@ -23,13 +23,33 @@ let CourseService = class CourseService {
         this.courseRepository = courseRepository;
         this.mentorRepository = mentorRepository;
     }
+    async generateUniqueSlug(baseSlug, excludeId) {
+        const cleanBase = (baseSlug || 'course')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '') || 'course';
+        let candidate = cleanBase;
+        let counter = 1;
+        while (true) {
+            const existing = await this.courseRepository.findOne({
+                where: { slug: candidate },
+                select: { id: true, slug: true },
+            });
+            if (!existing || (excludeId && existing.id === excludeId)) {
+                return candidate;
+            }
+            candidate = `${cleanBase}-${counter}`;
+            counter++;
+        }
+    }
     async create(createCourseDto) {
         const { mentor_ids, ...rest } = createCourseDto;
-        const slug = rest.slug ||
+        const rawSlug = rest.slug ||
             rest.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)+/g, '');
+        const slug = await this.generateUniqueSlug(rawSlug);
         const course = this.courseRepository.create({
             ...rest,
             slug,
@@ -42,7 +62,19 @@ let CourseService = class CourseService {
         if (mentor_ids?.length) {
             course.mentors = await this.mentorRepository.findBy({ id: (0, typeorm_2.In)(mentor_ids) });
         }
-        return await this.courseRepository.save(course);
+        try {
+            return await this.courseRepository.save(course);
+        }
+        catch (err) {
+            if (err?.code === '23505' ||
+                err?.detail?.includes('slug') ||
+                err?.message?.toLowerCase().includes('slug') ||
+                err?.message?.toLowerCase().includes('unique')) {
+                course.slug = `${slug}-${Date.now().toString().slice(-4)}`;
+                return await this.courseRepository.save(course);
+            }
+            throw err;
+        }
     }
     async findAll(pageStr, limitStr, search, categoryId, status, level) {
         const page = parseInt(pageStr ?? '1', 10) || 1;
@@ -111,13 +143,28 @@ let CourseService = class CourseService {
                 ? await this.mentorRepository.findBy({ id: (0, typeorm_2.In)(mentor_ids) })
                 : [];
         }
+        if (updatedSlug !== course.slug) {
+            updatedSlug = await this.generateUniqueSlug(updatedSlug, course.id);
+        }
         const updatedCourse = Object.assign(course, rest, {
             slug: updatedSlug,
             published_at: rest.published_at
                 ? new Date(rest.published_at)
                 : publishedAt,
         });
-        return await this.courseRepository.save(updatedCourse);
+        try {
+            return await this.courseRepository.save(updatedCourse);
+        }
+        catch (err) {
+            if (err?.code === '23505' ||
+                err?.detail?.includes('slug') ||
+                err?.message?.toLowerCase().includes('slug') ||
+                err?.message?.toLowerCase().includes('unique')) {
+                updatedCourse.slug = `${updatedSlug}-${Date.now().toString().slice(-4)}`;
+                return await this.courseRepository.save(updatedCourse);
+            }
+            throw err;
+        }
     }
     async remove(id) {
         const course = await this.findOne(id);

@@ -7,6 +7,7 @@ export declare class CourseService {
     private courseRepository;
     private mentorRepository;
     constructor(courseRepository: Repository<Course>, mentorRepository: Repository<Mentor>);
+    private generateUniqueSlug;
     create(createCourseDto: CreateCourseDto): Promise<Course>;
     findAll(pageStr?: string, limitStr?: string, search?: string, categoryId?: string, status?: string, level?: string): Promise<{
         items: Course[];

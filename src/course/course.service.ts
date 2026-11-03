@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, In } from 'typeorm';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -15,15 +15,41 @@ export class CourseService {
     private mentorRepository: Repository<Mentor>,
   ) {}
 
+  private async generateUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
+    const cleanBase = (baseSlug || 'course')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '') || 'course';
+
+    let candidate = cleanBase;
+    let counter = 1;
+
+    while (true) {
+      const existing = await this.courseRepository.findOne({
+        where: { slug: candidate },
+        select: { id: true, slug: true },
+      });
+
+      if (!existing || (excludeId && existing.id === excludeId)) {
+        return candidate;
+      }
+
+      candidate = `${cleanBase}-${counter}`;
+      counter++;
+    }
+  }
+
   async create(createCourseDto: CreateCourseDto) {
     const { mentor_ids, ...rest } = createCourseDto;
 
-    const slug =
+    const rawSlug =
       rest.slug ||
       rest.title
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)+/g, '');
+
+    const slug = await this.generateUniqueSlug(rawSlug);
 
     const course = this.courseRepository.create({
       ...rest,
@@ -40,7 +66,20 @@ export class CourseService {
       course.mentors = await this.mentorRepository.findBy({ id: In(mentor_ids) });
     }
 
-    return await this.courseRepository.save(course);
+    try {
+      return await this.courseRepository.save(course);
+    } catch (err: any) {
+      if (
+        err?.code === '23505' ||
+        err?.detail?.includes('slug') ||
+        err?.message?.toLowerCase().includes('slug') ||
+        err?.message?.toLowerCase().includes('unique')
+      ) {
+        course.slug = `${slug}-${Date.now().toString().slice(-4)}`;
+        return await this.courseRepository.save(course);
+      }
+      throw err;
+    }
   }
 
   async findAll(
@@ -130,13 +169,30 @@ export class CourseService {
         : [];
     }
 
+    if (updatedSlug !== course.slug) {
+      updatedSlug = await this.generateUniqueSlug(updatedSlug, course.id);
+    }
+
     const updatedCourse = Object.assign(course, rest, {
       slug: updatedSlug,
       published_at: rest.published_at
         ? new Date(rest.published_at)
         : publishedAt,
     });
-    return await this.courseRepository.save(updatedCourse);
+    try {
+      return await this.courseRepository.save(updatedCourse);
+    } catch (err: any) {
+      if (
+        err?.code === '23505' ||
+        err?.detail?.includes('slug') ||
+        err?.message?.toLowerCase().includes('slug') ||
+        err?.message?.toLowerCase().includes('unique')
+      ) {
+        updatedCourse.slug = `${updatedSlug}-${Date.now().toString().slice(-4)}`;
+        return await this.courseRepository.save(updatedCourse);
+      }
+      throw err;
+    }
   }
 
   async remove(id: string) {
