@@ -95,7 +95,7 @@ let CourseService = class CourseService {
         }
         const [items, total] = await this.courseRepository.findAndCount({
             where,
-            relations: { category: true },
+            relations: { category: true, mentors: { user: true } },
             skip,
             take: limit,
             order: { created_at: 'DESC' },
@@ -113,7 +113,7 @@ let CourseService = class CourseService {
         const whereClause = isUuid ? { id: identifier } : { slug: identifier };
         const course = await this.courseRepository.findOne({
             where: whereClause,
-            relations: { category: true, mentors: true, batches: true },
+            relations: { category: true, mentors: { user: true }, batches: true },
         });
         if (!course) {
             throw new common_1.NotFoundException(`Course with identifier ${identifier} not found`);
