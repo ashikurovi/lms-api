@@ -21,17 +21,49 @@ let LessonService = class LessonService {
     constructor(lessonRepository) {
         this.lessonRepository = lessonRepository;
     }
+    async generateUniqueSlug(baseSlug, excludeId) {
+        const cleanBase = (baseSlug || 'lesson')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '') || 'lesson';
+        let candidate = cleanBase;
+        let counter = 1;
+        while (true) {
+            const existing = await this.lessonRepository.findOne({
+                where: { slug: candidate },
+                select: { id: true, slug: true },
+            });
+            if (!existing || (excludeId && existing.id === excludeId)) {
+                return candidate;
+            }
+            candidate = `${cleanBase}-${counter}`;
+            counter++;
+        }
+    }
     async create(createLessonDto) {
-        const slug = createLessonDto.slug ||
+        const rawSlug = createLessonDto.slug ||
             createLessonDto.title
                 .toLowerCase()
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)+/g, '');
+        const slug = await this.generateUniqueSlug(rawSlug);
         const lesson = this.lessonRepository.create({
             ...createLessonDto,
             slug,
         });
-        return await this.lessonRepository.save(lesson);
+        try {
+            return await this.lessonRepository.save(lesson);
+        }
+        catch (err) {
+            if (err?.code === '23505' ||
+                err?.detail?.includes('slug') ||
+                err?.message?.toLowerCase().includes('slug') ||
+                err?.message?.toLowerCase().includes('unique')) {
+                lesson.slug = `${slug}-${Date.now().toString().slice(-4)}`;
+                return await this.lessonRepository.save(lesson);
+            }
+            throw err;
+        }
     }
     async findAll(pageStr, limitStr, search, moduleId, status, type) {
         const page = parseInt(pageStr ?? '1', 10) || 1;
@@ -87,10 +119,25 @@ let LessonService = class LessonService {
                 .replace(/[^a-z0-9]+/g, '-')
                 .replace(/(^-|-$)+/g, '');
         }
+        if (updatedSlug !== lesson.slug) {
+            updatedSlug = await this.generateUniqueSlug(updatedSlug, lesson.id);
+        }
         const updatedLesson = Object.assign(lesson, updateLessonDto, {
             slug: updatedSlug,
         });
-        return await this.lessonRepository.save(updatedLesson);
+        try {
+            return await this.lessonRepository.save(updatedLesson);
+        }
+        catch (err) {
+            if (err?.code === '23505' ||
+                err?.detail?.includes('slug') ||
+                err?.message?.toLowerCase().includes('slug') ||
+                err?.message?.toLowerCase().includes('unique')) {
+                updatedLesson.slug = `${updatedSlug}-${Date.now().toString().slice(-4)}`;
+                return await this.lessonRepository.save(updatedLesson);
+            }
+            throw err;
+        }
     }
     async remove(id) {
         const lesson = await this.findOne(id);

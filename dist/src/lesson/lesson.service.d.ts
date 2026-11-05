@@ -5,6 +5,7 @@ import { Lesson } from './entities/lesson.entity';
 export declare class LessonService {
     private lessonRepository;
     constructor(lessonRepository: Repository<Lesson>);
+    private generateUniqueSlug;
     create(createLessonDto: CreateLessonDto): Promise<Lesson>;
     findAll(pageStr?: string, limitStr?: string, search?: string, moduleId?: string, status?: string, type?: string): Promise<{
         items: Lesson[];
